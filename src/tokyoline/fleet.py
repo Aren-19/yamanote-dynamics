@@ -33,7 +33,11 @@ from pathlib import Path
 
 import numpy as np
 
-from .brake import DEFAULT_JERK_LIMIT, BrakeProfile
+from .brake import (
+    DEFAULT_JERK_LIMIT,
+    BrakeProfile,
+    SpeedDependentBrakeProfile,
+)
 from .data import DATA_DIR
 from .units import KMHS_TO_MS2, KMH_TO_MS
 
@@ -140,91 +144,51 @@ class FleetMember:
             return float(np.interp(v_kmh, xs, ys))
         return self.service_deceleration_kmh_s
 
+    def brake_profile(self, jerk: float = DEFAULT_JERK_LIMIT,
+                      dt: float = 0.005):
+        """The braking model for this class, or None if none is published.
+
+        Constant-rate classes get the closed-form BrakeProfile, which is exact.
+        Classes publishing a speed-dependent curve get the numerical profile.
+        Both satisfy the same interface, so callers do not branch.
+        """
+        if self.deceleration_at_kmh(0.0) is None:
+            return None
+        if self.deceleration_curve:
+            return SpeedDependentBrakeProfile(
+                list(self.deceleration_curve), jerk=jerk, dt=dt,
+                v_max_ms=self.max_operating_speed_kmh * KMH_TO_MS,
+            )
+        return BrakeProfile(
+            a_max=self.service_deceleration_kmh_s * KMHS_TO_MS2, jerk=jerk)
+
     def stopping_distance_m(self, from_kmh: float | None = None,
                             jerk: float = DEFAULT_JERK_LIMIT,
-                            dt: float = 0.01) -> float | None:
+                            dt: float = 0.005) -> float | None:
         """Distance to stop from a given speed under a shared jerk limit.
 
-        Defaults to stopping from the class's own maximum operating speed, which
-        is the comparison the spec asks for -- each train braking from its own
-        cruise, under identical comfort constraints.
+        Defaults to the class's own maximum operating speed, so each train
+        brakes from its own cruise under identical comfort constraints.
 
         Returns None when the class publishes no deceleration figure. Callers
         must handle that rather than receiving a plausible-looking default.
         """
-        if self.deceleration_at_kmh(0.0) is None:
+        profile = self.brake_profile(jerk, dt)
+        if profile is None:
             return None
-
-        v0 = (from_kmh if from_kmh is not None else self.max_operating_speed_kmh) * KMH_TO_MS
-
-        if not self.deceleration_curve:
-            # Constant rate: the closed form in BrakeProfile is exact.
-            a_max = self.service_deceleration_kmh_s * KMHS_TO_MS2
-            return BrakeProfile(a_max=a_max, jerk=jerk).distance_to_stop(v0)
-
-        return self._variable_rate_stop(v0, jerk, dt)
-
-    def _variable_rate_stop(self, v0: float, jerk: float, dt: float) -> float:
-        """Integrate a stop under a speed-dependent deceleration limit.
-
-        Explicit stepping with a jerk-limited ramp in and out. Not RK4: the
-        controlling quantity is a rate limit that changes with speed, and the
-        ramp-out condition is a switching event, so a small explicit step is both
-        adequate and easier to reason about. Step-size sensitivity is checked in
-        the fleet script.
-        """
-        v = v0
-        x = 0.0
-        a = 0.0  # current deceleration magnitude, m/s^2
-
-        while v > 1e-6:
-            target = self.deceleration_at_kmh(v * 3.6) * KMHS_TO_MS2
-
-            # Begin ramping out when the remaining speed is exactly what the
-            # ramp-down itself will shed. Same condition as the constant-rate case.
-            if v <= a * a / (2.0 * jerk):
-                a = max(a - jerk * dt, 0.0)
-            elif a < target:
-                a = min(a + jerk * dt, target)
-            else:
-                a = max(a - jerk * dt, target)
-
-            dv = a * dt
-            if dv > v:
-                # Final partial step: close out on the remaining speed.
-                x += v * v / (2.0 * a) if a > 0 else 0.0
-                break
-
-            x += v * dt - 0.5 * a * dt * dt
-            v -= dv
-
-        return x
+        return profile.distance_to_stop(self._reference_speed_ms(from_kmh))
 
     def stopping_time_s(self, from_kmh: float | None = None,
-                        jerk: float = DEFAULT_JERK_LIMIT) -> float | None:
-        if self.deceleration_at_kmh(0.0) is None:
+                        jerk: float = DEFAULT_JERK_LIMIT,
+                        dt: float = 0.005) -> float | None:
+        profile = self.brake_profile(jerk, dt)
+        if profile is None:
             return None
-        v0 = (from_kmh if from_kmh is not None else self.max_operating_speed_kmh) * KMH_TO_MS
-        if not self.deceleration_curve:
-            a_max = self.service_deceleration_kmh_s * KMHS_TO_MS2
-            return BrakeProfile(a_max=a_max, jerk=jerk).time_to_stop(v0)
-        # Recover time from the same integration.
-        dt = 0.01
-        v, t, a = v0, 0.0, 0.0
-        while v > 1e-6:
-            target = self.deceleration_at_kmh(v * 3.6) * KMHS_TO_MS2
-            if v <= a * a / (2.0 * jerk):
-                a = max(a - jerk * dt, 0.0)
-            elif a < target:
-                a = min(a + jerk * dt, target)
-            else:
-                a = max(a - jerk * dt, target)
-            dv = a * dt
-            t += dt
-            if dv > v:
-                break
-            v -= dv
-        return t
+        return profile.time_to_stop(self._reference_speed_ms(from_kmh))
+
+    def _reference_speed_ms(self, from_kmh: float | None) -> float:
+        speed = from_kmh if from_kmh is not None else self.max_operating_speed_kmh
+        return speed * KMH_TO_MS
 
 
 def to_train_spec(m: FleetMember, *, passenger_mass_kg: float = 60.0,
@@ -267,21 +231,28 @@ def to_train_spec(m: FleetMember, *, passenger_mass_kg: float = 60.0,
 def simulatable(m: FleetMember) -> tuple[bool, str]:
     """Whether a class can be run on this line's model, and why not if it cannot.
 
-    High-speed stock is excluded on purpose, for two independent reasons:
+    High-speed stock is excluded on purpose.
+
+    Speed-dependent braking is no longer the obstacle it once was:
+    SpeedDependentBrakeProfile implements it and satisfies the same interface
+    as the constant-rate profile, so simulate_segment accepts either. What
+    remains:
 
     * The Davis estimator was built for a blunt-nosed commuter EMU and does not
-      transfer to a streamlined 400 m trainset. Running one anyway would produce
-      confident-looking numbers from a resistance model known to be wrong.
-    * Braking rate for high-speed stock is strongly speed-dependent (the E7
-      publishes 2.69 km/h/s at low speed falling to 1.44 at line speed), which
-      the segment solver's constant-rate brake profile does not represent.
+      transfer to a streamlined 400 m trainset. fleet.json carries per-class
+      aerodynamic coefficients, but marks the high-speed ones as weakly
+      grounded, and tunnel aerodynamics are not modelled at all -- a
+      first-order omission on the Tokaido.
+    * Yamanote geometry is wrong for the question. Running a 400 m Shinkansen
+      between stops 1.15 km apart produces a number, but not a meaningful one.
 
-    Neither is a hard technical barrier -- both are fixable -- but until they
-    are fixed the honest answer is to refuse rather than to render.
+    The refusal is therefore about the resistance model and the choice of line,
+    not about the solver.
     """
     if m.category != "commuter EMU":
         return False, ("high-speed stock: the commuter Davis estimator does not "
-                       "transfer, and its braking rate is speed-dependent")
+                       "transfer, and Yamanote geometry is wrong for the "
+                       "question")
     if m.service_deceleration_kmh_s is None:
         return False, "no published service deceleration"
     if m.tare_mass_t is None:

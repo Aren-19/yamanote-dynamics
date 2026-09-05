@@ -6,7 +6,11 @@ loop -- it is the quantified, explained gap between what the physics says is
 possible and what the railway actually schedules.
 """
 
-from .brake import DEFAULT_JERK_LIMIT, BrakeProfile
+from .brake import (
+    DEFAULT_JERK_LIMIT,
+    BrakeProfile,
+    SpeedDependentBrakeProfile,
+)
 from .conditions import CONDITIONS, DEFAULT_CONDITION, RailCondition
 from .data import (
     Segment,
@@ -25,6 +29,7 @@ from .traction import TractionModel
 
 __all__ = [
     "BrakeProfile",
+    "SpeedDependentBrakeProfile",
     "CONDITIONS",
     "Circuit",
     "DEFAULT_CONDITION",

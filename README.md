@@ -98,6 +98,7 @@ the unit tests do.
 | Tractive effort | `F(v) = min(F_max, P/v, μ(v)·m_adh·g)` |
 | Adhesion | `μ(v) = 0.161 + 7.5/(v_kmh + 44)` (Curtius–Kniffler) |
 | Jerk-limited stop | `T = v₀/a_max + a_max/j` |
+| Ramp-out (closed form) | `t = a/j`, `d = a³/6j²` |
 | Energy balance | `E_traction = E_resistance + E_brake` |
 
 Fixed-step RK4 with explicit control-phase switching; bisection for root
