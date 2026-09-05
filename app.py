@@ -1749,9 +1749,10 @@ with view_analysis:
         st.markdown("##### Energy balance check")
         st.markdown(
             "Each segment starts and ends at rest, so the kinetic term vanishes "
-            "and E_traction = E_resistance + E_brake_system must hold exactly. "
-            "Both sides are computed independently, which tests the integrator "
-            "rather than restating an assumption."
+            "and E_traction = E_resistance + E_brake_system + E_grade must hold "
+            "exactly. Both sides are computed independently, which tests the "
+            "integrator rather than restating an assumption. The gravitational "
+            "term is zero here, because this page runs on level track."
         )
         err = e["balance_error"]
         if err < 5e-3:
@@ -2258,18 +2259,33 @@ with view_analysis:
 
         st.divider()
         st.markdown("##### Numerical checks")
-        n1, n2, n3 = st.columns(3)
+        n1, n2, n3, n4 = st.columns(4)
         n1.metric("Platform position error", "0.0 m", "all 30 segments",
                   delta_color="off")
         n2.metric("Circuit time convergence", "8 ms", "dt 0.5 → 0.005 s",
                   delta_color="off")
-        n3.metric("Energy balance residual", "2.5e-04", "first order in dt",
+        n3.metric("Energy balance residual", "9.8e-04", "worst case, any gradient",
+                  delta_color="off")
+        n4.metric("Distance rounding", "±0.8 s", "1σ on the circuit",
                   delta_color="off")
         st.caption(
             "The energy balance is a real test, not a restatement: a segment "
-            "starts and ends at rest, so E_traction = E_resistance + E_brake "
-            "must hold, and both sides are computed independently. It initially "
-            "failed at 7.3% and exposed a genuine bug — cruise force was being "
-            "recorded as zero because `effort_n` returns zero at maximum speed, "
-            "which is exactly where cruise happens on this line."
+            "starts and ends at rest, so E_traction = E_resistance + E_brake + "
+            "E_grade must hold, and both sides are computed independently. It "
+            "initially failed at 7.3% and exposed a genuine bug — cruise force "
+            "was being recorded as zero because `effort_n` returns zero at "
+            "maximum speed, which is exactly where cruise happens on this line. "
+            "The gravitational term was added later, after the identity was "
+            "found to fail by up to 104% on a graded segment while holding "
+            "exactly on the level track everything had been tested on."
+        )
+        st.caption(
+            "The integrator is not what limits precision. Published operating "
+            "kilometrage is stated to 0.1 km, so each station position carries "
+            "up to 50 m of rounding — 17,000 times the step-size error at "
+            "dt = 0.1 s. The circuit total absorbs it because the loop is "
+            "closed and each position appears in two segments with opposite "
+            "sign. A single segment does not: 50 m is worth 2–3 s there, which "
+            "is a second reason, alongside the minute-rounded timetable, that "
+            "no per-segment claim is made."
         )
