@@ -43,8 +43,18 @@ python -m venv .venv
 ```
 
 ```bash
+.venv\Scripts\python.exe -m pip install --upgrade pip
+```
+
+```bash
 .venv\Scripts\python.exe -m pip install -e ".[app]"
 ```
+
+The pip upgrade is not optional on Python 3.10, which ships pip 21. Editable
+installs of a project with no `setup.py` need PEP 660 support, added in pip 21.3;
+older pip fails with *"editable mode currently requires a setuptools-based
+build"*. Verified from a clean checkout: after upgrading, the install, the lint
+and all 57 tests pass.
 
 ```bash
 .venv\Scripts\python.exe launcher.py

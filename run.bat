@@ -12,7 +12,11 @@ if not exist ".venv\Scripts\python.exe" (
     echo.
     echo   Set it up first:
     echo       python -m venv .venv
-    echo       .venv\Scripts\python.exe -m pip install -e ".[viz]"
+    echo       .venv\Scripts\python.exe -m pip install --upgrade pip
+    echo       .venv\Scripts\python.exe -m pip install -e ".[app]"
+    echo.
+    echo   The pip upgrade matters: Python 3.10 ships pip 21, which cannot
+    echo   perform an editable install of this project.
     echo.
     pause
     exit /b 1
