@@ -21,9 +21,9 @@ import pytest
 pytest.importorskip("streamlit", reason="requires the viz extra")
 pytest.importorskip("plotly", reason="requires the viz extra")
 
-from pathlib import Path  # noqa: E402
+from pathlib import Path
 
-from streamlit.testing.v1 import AppTest  # noqa: E402
+from streamlit.testing.v1 import AppTest
 
 TIMEOUT = 300
 
