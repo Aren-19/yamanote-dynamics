@@ -1,5 +1,7 @@
 # Yamanote Line Train Dynamics Model
 
+[![tests](https://github.com/VolitantTrack70/yamanote-dynamics/actions/workflows/tests.yml/badge.svg)](https://github.com/VolitantTrack70/yamanote-dynamics/actions/workflows/tests.yml)
+
 A first-principles physics simulation of the JR East Yamanote Line, compared
 against the published timetable.
 
@@ -91,12 +93,17 @@ Analysis scripts must use the virtual environment's interpreter:
 .venv\Scripts\python.exe -m pytest
 ```
 
-The suite asserts identities and bounds rather than pinning specific numbers:
-energy conservation, exact platform arrival, monotonicity of resistance and
-run time, the jerk penalty being independent of initial speed, and that the
-adhesion ceiling never binds for this class. CI runs it on Python 3.10 and
-3.12, then executes the analysis scripts, which exercise more of the code than
-the unit tests do.
+119 tests, 88% coverage of the package. Most assert identities and bounds
+rather than pinning numbers — energy conservation, exact platform arrival,
+monotonicity of resistance and run time, the jerk penalty being independent of
+initial speed, the adhesion ceiling never binding for this class. A separate
+group does pin the figures this README states publicly, so they cannot drift
+out of date unnoticed, and another enforces the data layer's provenance
+tagging.
+
+CI runs lint, the suite on Python 3.10 and 3.12 with an 80% coverage floor,
+then the analysis scripts, which exercise more of the code than the unit tests
+do.
 
 ## Method
 
