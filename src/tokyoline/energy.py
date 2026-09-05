@@ -7,7 +7,13 @@ Over one segment the train starts and ends at rest, so the kinetic energy term
 vanishes from the balance and everything the motors put in must leave through
 one of two doors:
 
-    E_traction  =  E_resistance  +  E_brake_system
+    E_traction  =  E_resistance  +  E_brake_system  +  E_grade
+
+The gravitational term is zero on level track, which covers every headline
+result here, and cancels exactly over a closed loop. It is included so the
+identity still holds on a graded segment: without it the residual reached 57
+percent on a 20 per-mille grade, which looked like a broken integrator but was
+a missing term.
 
 That identity is not an assumption -- it follows from the work-energy theorem
 given the start and end conditions -- so computing both sides independently and
@@ -32,6 +38,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
+from .resistance import grade_resistance
 from .segment import Phase, SegmentResult
 from .traction import TractionModel
 
@@ -80,7 +87,13 @@ class EnergyBreakdown:
     """Kinetic energy at the brake application point -- the peak of the segment."""
 
     balance_residual_j: float
-    """E_traction - (E_resistance + E_brake_system). Should be ~0."""
+    """E_traction - (E_resistance + E_brake_system + E_grade). Should be ~0."""
+
+    grade_j: float = 0.0
+    """Work done against gravity. Negative downhill, zero on level track.
+
+    Over a closed loop this cancels exactly, which is why circuit-level figures
+    are unaffected by gradient. Over a single segment it does not."""
 
     duration_s: float = 0.0
     distance_m: float = 0.0
@@ -136,6 +149,7 @@ class EnergyBreakdown:
             regenerated_j=self.regenerated_j + other.regenerated_j,
             auxiliary_j=self.auxiliary_j + other.auxiliary_j,
             kinetic_peak_j=max(self.kinetic_peak_j, other.kinetic_peak_j),
+            grade_j=self.grade_j + other.grade_j,
             balance_residual_j=self.balance_residual_j + other.balance_residual_j,
             duration_s=self.duration_s + other.duration_s,
             distance_m=self.distance_m + other.distance_m,
@@ -189,12 +203,31 @@ def segment_energy(
 
     is_brake = np.array([p is Phase.BRAKE for p in result.phase])
 
-    # Brake system force is the NET commanded deceleration less the help already
-    # being given by running resistance. Clamped at zero: during the jerk ramps
+    # Brake system force is the NET commanded deceleration less whatever is
+    # already retarding the train: running resistance, and gravity on a
+    # gradient. Uphill, gravity does part of the braking and the brakes supply
+    # less; downhill they must supply more. Omitting the gravitational part
+    # left the balance out by 104 percent on a 20 per-mille descent, with the
+    # sign flipping between climb and descent -- which is what identified it.
+    # Clamped at zero: during the jerk ramps
     # the commanded rate is small enough that resistance alone can exceed it, and
     # a brake cannot absorb negative energy.
+    grade_force_n = grade_resistance(traction.spec.mass_kg(traction.load_factor),
+                                     result.grade_permille)
     decel_force = m_eff * np.abs(result.a) * is_brake
-    p_brake_system = np.maximum(decel_force - resistance_n, 0.0) * v * is_brake
+    p_brake_system = np.maximum(
+        decel_force - resistance_n - grade_force_n, 0.0) * v * is_brake
+
+    # Holding a constant speed downhill takes braking, not traction. Where
+    # gravity exceeds running resistance the driver is on the brake to stay at
+    # the limit, and the cruise phase records no tractive effort because there
+    # is none to record. Without this term the work gravity does during a
+    # descent is absorbed by nothing and the balance cannot close: it was out
+    # by 81 percent on a 20 per-mille fall.
+    is_cruise = np.array([p is Phase.CRUISE for p in result.phase])
+    holding_force = resistance_n + grade_force_n
+    p_brake_system = p_brake_system + (
+        np.maximum(-holding_force, 0.0) * v * is_cruise)
 
     # Regeneration is only available above the changeover speed.
     regen_available = is_brake & (v * 3.6 >= regen_cutoff_kmh)
@@ -218,6 +251,12 @@ def segment_energy(
 
     kinetic_peak = 0.5 * m_eff * float(v.max()) ** 2
 
+    # Gravitational work over the segment. Path independent, so it is
+    # m*g*sin(theta)*distance rather than an integral: the train ends at rest
+    # either way, and only the net height change matters.
+    mass = traction.spec.mass_kg(traction.load_factor)
+    e_grade = grade_resistance(mass, result.grade_permille) * result.distance_m
+
     breakdown = EnergyBreakdown(
         traction_j=e_traction,
         resistance_j=e_resistance,
@@ -225,7 +264,8 @@ def segment_energy(
         regenerated_j=e_regen,
         auxiliary_j=e_aux,
         kinetic_peak_j=kinetic_peak,
-        balance_residual_j=e_traction - (e_resistance + e_brake),
+        grade_j=e_grade,
+        balance_residual_j=e_traction - (e_resistance + e_brake + e_grade),
         duration_s=duration + include_dwell_s,
         distance_m=result.distance_m,
     )

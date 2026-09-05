@@ -53,6 +53,10 @@ class SegmentResult:
     position_error_m: float = 0.0
     """Distance by which the train missed the platform. Should be ~1e-9."""
 
+    grade_permille: float = 0.0
+    """Gradient the run was solved on, carried so the energy accounting can
+    include gravitational work without the caller having to remember."""
+
     phase_times_s: dict[str, float] = field(default_factory=dict)
     phase_distances_m: dict[str, float] = field(default_factory=dict)
 
@@ -293,6 +297,7 @@ def simulate_segment(
         tractive_force_n=np.asarray(forces),
         max_speed_ms=float(v_arr.max()),
         position_error_m=float(x_arr[-1] - distance_m),
+        grade_permille=grade_permille,
         phase_times_s=phase_times,
         phase_distances_m=phase_distances,
     )
