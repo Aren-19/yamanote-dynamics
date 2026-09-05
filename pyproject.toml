@@ -7,15 +7,15 @@ name = "tokyoline"
 version = "0.1.0"
 description = "First-principles train dynamics for the Yamanote Line, validated against the published timetable"
 requires-python = ">=3.10"
-# scipy is deliberately absent. The spec anticipated needing it for integration
-# and root-finding, but the physics core ended up not using it: the RK4 step is
-# hand-rolled so control-phase switching stays explicit, the braking solution is
-# closed-form, and the brake-application point is found by bisection. Declaring
-# an unused dependency misstates what the project needs to run.
+# scipy and matplotlib are deliberately absent. The original plan called for
+# scipy for integration and root-finding, but the physics core ended up not
+# needing it: the RK4 step is hand-rolled so control-phase switching stays
+# explicit, the braking solution is closed-form, and the brake-application
+# point is found by bisection. matplotlib was never imported at all.
+# Declaring unused dependencies misstates what the project needs to run.
 dependencies = [
     "numpy>=1.24",
     "pandas>=2.0",
-    "matplotlib>=3.7",
 ]
 
 [project.optional-dependencies]
@@ -23,6 +23,12 @@ dependencies = [
 viz = ["plotly>=5.18", "streamlit>=1.30"]
 # Optional: run the GUI in a native desktop window instead of a browser tab.
 app = ["plotly>=5.18", "streamlit>=1.30", "pywebview>=4.4"]
+# Test suite. `pip install -e ".[dev]"` then `pytest`.
+dev = ["pytest>=7.0"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

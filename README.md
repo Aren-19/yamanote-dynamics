@@ -71,6 +71,23 @@ Analysis scripts must use the virtual environment's interpreter:
 | `gradient.py` | Bounding study for the flat-track assumption |
 | `measure_dwell.py` | Live dwell measurement (needs an ODPT key) |
 
+### Tests
+
+```bash
+.venv\Scripts\python.exe -m pip install -e ".[dev]"
+```
+
+```bash
+.venv\Scripts\python.exe -m pytest
+```
+
+The suite asserts identities and bounds rather than pinning specific numbers:
+energy conservation, exact platform arrival, monotonicity of resistance and
+run time, the jerk penalty being independent of initial speed, and that the
+adhesion ceiling never binds for this class. CI runs it on Python 3.10 and
+3.12, then executes the analysis scripts, which exercise more of the code than
+the unit tests do.
+
 ## Method
 
 | Quantity | Expression |
