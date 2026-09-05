@@ -148,8 +148,10 @@ def test_position_at_a_station_matches_that_station(geom):
 
 def test_negative_distance_wraps_backwards(geom):
     """Used when drawing a train whose tail is behind the origin."""
-    lat, lon = geom.position_at(-100.0)
-    assert lat == pytest.approx(geom.position_at(geom.total_m - 100.0)[0])
+    behind = geom.position_at(-100.0)
+    ahead = geom.position_at(geom.total_m - 100.0)
+    assert behind[0] == pytest.approx(ahead[0])
+    assert behind[1] == pytest.approx(ahead[1])
 
 
 def test_closed_path_repeats_the_first_station(geom):
