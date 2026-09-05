@@ -1,7 +1,15 @@
-"""Step-size sensitivity study for the fixed-step RK4 integrator.
+"""How precise is the simulated run time, and what limits it?
 
-Evidence for the README that the integrator has converged. Without this, every
-run-time figure in the project is an unquantified claim.
+Two separate questions, and the answer to the second is not the integrator.
+
+The first half is the step-size study: evidence that the fixed-step RK4 has
+converged, without which every run-time figure in the project is an unquantified
+claim. The second half is the input: every interstation distance comes from JR
+East's published operating kilometrage, stated to 0.1 km, so each station
+position carries up to 50 m of rounding.
+
+Reporting the first without the second would overstate the precision of the
+result by several orders of magnitude.
 """
 
 from __future__ import annotations
@@ -9,6 +17,8 @@ from __future__ import annotations
 from _env import ensure
 
 ensure()
+
+import numpy as np
 
 from tokyoline import build_model, load_segments, simulate_segment
 
@@ -49,3 +59,77 @@ for dt, total, _ in results:
 print()
 print("  RK4 is 4th order, so halving dt should cut the error by roughly 16x")
 print("  in the smooth regions. Phase-switch handling limits the observed order.")
+
+
+# ------------------------------------------------------- input quantization
+
+print()
+print("=" * 78)
+print("DISTANCE QUANTIZATION  --  the uncertainty the integrator cannot fix")
+print("=" * 78)
+print("  Published kilometrage is given to 0.1 km, so each station position is")
+print("  known to within 50 m and the segment distances inherit that. Sampling")
+print("  each position uniformly across its rounding interval gives the spread")
+print("  the published data alone permits.")
+print()
+
+distances = np.array([seg.distance_m for seg in segments])
+loop_m = distances.sum()
+cumulative = np.concatenate([[0.0], np.cumsum(distances)])[:-1]
+
+print("  cost of 50 m, by segment length:")
+for d in (500.0, 1200.0, 2000.0):
+    t_short = simulate_segment(traction, brake, d, speed_limit_ms=v_limit,
+                               dt=0.05).run_time_s
+    t_long = simulate_segment(traction, brake, d + 50.0, speed_limit_ms=v_limit,
+                              dt=0.05).run_time_s
+    print(f"    {d:6.0f} m segment  ->  {t_long - t_short:5.2f} s")
+print()
+
+
+# dt = 0.2 s throughout the sampling: the sweep above puts the step error
+# there four orders of magnitude below the spread being measured, and 300
+# loops at a finer step would cost minutes for no change in the answer.
+def loop_time(seg_distances: np.ndarray, dt: float = 0.2) -> float:
+    return sum(
+        simulate_segment(traction, brake, float(d), speed_limit_ms=v_limit,
+                         dt=dt).run_time_s
+        for d in seg_distances
+    )
+
+
+# The seed is fixed so the figure quoted in the README is reproducible.
+rng = np.random.default_rng(20260905)
+SAMPLES = 300
+totals = np.empty(SAMPLES)
+for i in range(SAMPLES):
+    positions = cumulative + rng.uniform(-50.0, 50.0, size=cumulative.size)
+    # Differences around the closed loop: an error at one station lengthens one
+    # segment and shortens its neighbour, which is why this largely cancels.
+    perturbed = np.diff(np.concatenate([positions, [positions[0] + loop_m]]))
+    totals[i] = loop_time(perturbed)
+
+published = loop_time(distances)
+print(f"  {SAMPLES} samples, published distances give {published:.1f} s")
+print(f"    mean            {totals.mean():8.1f} s   ({totals.mean() - published:+.1f})")
+print(f"    std             {totals.std():8.2f} s")
+print(f"    5th to 95th     {np.percentile(totals, 5):8.1f} to "
+      f"{np.percentile(totals, 95):.1f} s")
+print(f"    full range      {totals.min():8.1f} to {totals.max():.1f} s")
+print()
+print("  The loop total is insensitive because it is closed: the rounding")
+print("  errors are differences of positions that each appear twice, with")
+print("  opposite sign. A single segment is not protected that way.")
+print()
+
+step_error = abs(results[2][1] - reference)  # dt = 0.1 s, the working step
+print(f"  step size (dt = 0.1 s) contributes   {step_error:.5f} s")
+print(f"  distance rounding contributes        {totals.std():.5f} s  (1 sigma)")
+ratio = totals.std() / step_error if step_error else float("inf")
+print(f"  input rounding is {ratio:,.0f}x the numerical error")
+print()
+print("  So the integrator is not what limits the result, and refining it")
+print("  further would buy nothing. At the loop level both are negligible")
+print("  against the 598 s residual margin. At the per-segment level 50 m is")
+print("  worth 2 to 3 s, which is a second independent reason -- alongside the")
+print("  minute-rounded timetable -- that no per-segment claim is supported.")

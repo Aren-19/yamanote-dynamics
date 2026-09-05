@@ -56,7 +56,7 @@ The pip upgrade is not optional on Python 3.10, which ships pip 21. Editable
 installs of a project with no `setup.py` need PEP 660 support, added in pip 21.3;
 older pip fails with *"editable mode currently requires a setuptools-based
 build"*. Verified from a clean checkout: after upgrading, the install, the lint
-and all 57 tests pass.
+and the full suite pass.
 
 ```bash
 .venv\Scripts\python.exe launcher.py
@@ -93,7 +93,7 @@ Analysis scripts must use the virtual environment's interpreter:
 .venv\Scripts\python.exe -m pytest
 ```
 
-119 tests, 88% coverage of the package. Most assert identities and bounds
+164 tests, 91% coverage of the package. Most assert identities and bounds
 rather than pinning numbers — energy conservation, exact platform arrival,
 monotonicity of resistance and run time, the jerk penalty being independent of
 initial speed, the adhesion ceiling never binding for this class. A separate
@@ -116,7 +116,7 @@ do.
 | Adhesion | `μ(v) = 0.161 + 7.5/(v_kmh + 44)` (Curtius–Kniffler) |
 | Jerk-limited stop | `T = v₀/a_max + a_max/j` |
 | Ramp-out (closed form) | `t = a/j`, `d = a³/6j²` |
-| Energy balance | `E_traction = E_resistance + E_brake` |
+| Energy balance | `E_traction = E_resistance + E_brake + E_grade` |
 
 Fixed-step RK4 with explicit control-phase switching; bisection for root
 finding; closed-form braking. scipy is not a dependency.
@@ -131,12 +131,24 @@ solver overshoots.
 |---|---|
 | Final position error | 0.0 m on all 30 segments |
 | Circuit time convergence | 8 ms across dt = 0.5 → 0.005 s |
-| Energy balance residual | 2.5 × 10⁻⁴, first order in dt |
+| Energy balance residual | 9.8 × 10⁻⁴ worst case, first order in dt |
+| Distance rounding | ±0.8 s (1σ) on the circuit, ±2–3 s per segment |
 
 The energy balance is a real test, not a restatement: a segment starts and
-ends at rest, so `E_traction = E_resistance + E_brake` must hold, and both
-sides are computed independently. It initially failed at 7.3% and exposed a
-genuine bug.
+ends at rest, so `E_traction = E_resistance + E_brake + E_grade` must hold,
+and both sides are computed independently. It initially failed at 7.3% and
+exposed a genuine bug. The gravitational term was added later, after the
+identity was found to fail by up to 104% on a graded segment while holding
+exactly on level track — the regime everything had been tested in.
+
+The integrator is not what limits precision. Published operating kilometrage
+(営業キロ) is stated to 0.1 km, so each station position carries up to 50 m of
+rounding. Sampling positions across that interval moves the circuit minimum by
+0.83 s (1σ), roughly 17,000× the step-size error at dt = 0.1 s. The circuit
+total survives because the loop is closed — each position appears in two
+segments with opposite sign — but a single segment has no cancelling partner,
+where 50 m is worth 2–3 s. That is a second independent reason, alongside the
+minute-rounded timetable, that no per-segment claim is supported.
 
 ## Other results
 

@@ -14,6 +14,7 @@ catch a real change in behaviour.
 
 from __future__ import annotations
 
+import numpy as np
 import pytest
 
 from tokyoline import build_model, load_segments, simulate_segment
@@ -125,6 +126,72 @@ def test_platform_error_is_zero(runs):
     """README: 'Final position error 0.0 m on all 30 segments'."""
     _, _, _, results = runs
     assert max(abs(r.position_error_m) for r in results) < 1e-9
+
+
+def test_distance_rounding_is_worth_about_one_second_over_the_loop(runs):
+    """README: published kilometrage is stated to 0.1 km, and the resulting
+    uncertainty on the circuit minimum is under a second.
+
+    It stays that small because the loop is closed. Each station position
+    appears in two segments with opposite sign, so its rounding error largely
+    cancels; only the residual survives. If a change ever broke that structure
+    -- distances read independently per segment rather than differenced from
+    cumulative kilometrage -- the spread would grow by a factor of about the
+    square root of thirty, and this would catch it."""
+    traction, brake, segments, _ = runs
+    distances = np.array([s.distance_m for s in segments])
+    cumulative = np.concatenate([[0.0], np.cumsum(distances)])[:-1]
+    loop_m = distances.sum()
+
+    rng = np.random.default_rng(20260905)
+    totals = []
+    for _ in range(40):
+        positions = cumulative + rng.uniform(-50.0, 50.0, size=cumulative.size)
+        perturbed = np.diff(np.concatenate([positions, [positions[0] + loop_m]]))
+        totals.append(sum(
+            simulate_segment(traction, brake, float(d),
+                             speed_limit_ms=traction.spec.max_speed_ms,
+                             dt=0.2).run_time_s
+            for d in perturbed
+        ))
+
+    assert np.std(totals) < 1.5
+    assert abs(np.mean(totals) - 2309) < 3
+
+
+def test_fifty_metres_is_worth_two_to_three_seconds_on_one_segment(runs):
+    """The other half of the same finding, and the reason per-segment results
+    carry no claim: a single segment has no cancelling partner, so the same
+    50 m of rounding lands whole."""
+    traction, brake, _, _ = runs
+    for distance in (500.0, 1200.0, 2000.0):
+        pair = [
+            simulate_segment(traction, brake, d,
+                             speed_limit_ms=traction.spec.max_speed_ms,
+                             dt=0.05).run_time_s
+            for d in (distance, distance + 50.0)
+        ]
+        assert 1.8 < pair[1] - pair[0] < 3.0
+
+
+def test_input_rounding_dominates_integration_error(runs):
+    """The claim that justifies stopping at dt = 0.1 s. Refining the step buys
+    nothing while the input is known only to 50 m."""
+    traction, brake, segments, _ = runs
+    coarse = sum(
+        simulate_segment(traction, brake, s.distance_m,
+                         speed_limit_ms=traction.spec.max_speed_ms,
+                         dt=0.1).run_time_s
+        for s in segments
+    )
+    fine = sum(
+        simulate_segment(traction, brake, s.distance_m,
+                         speed_limit_ms=traction.spec.max_speed_ms,
+                         dt=0.01).run_time_s
+        for s in segments
+    )
+    # Two orders of magnitude below the 0.83 s that rounding contributes.
+    assert abs(coarse - fine) < 0.01
 
 
 def test_e7_stops_in_5670_m_from_275_kmh():
