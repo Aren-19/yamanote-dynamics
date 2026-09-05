@@ -14,7 +14,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from .units import G, RHO_AIR
+from .units import RHO_AIR, G
 
 
 @dataclass(frozen=True)
@@ -62,7 +62,7 @@ class DavisCoefficients:
         flange_n_per_tonne_per_kmh: float = 0.06,
         cd_ends: float = 0.80,
         cd_per_car: float = 0.06,
-    ) -> "DavisCoefficients":
+    ) -> DavisCoefficients:
         """Estimate Davis coefficients for a multiple unit.
 
         Each keyword is a separate physical claim, so each can be challenged

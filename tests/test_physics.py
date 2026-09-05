@@ -39,12 +39,12 @@ def segments():
 
 def test_kmh_to_ms_exact():
     assert ms(90.0) == pytest.approx(25.0)
-    assert KMH_TO_MS == pytest.approx(1 / 3.6)
+    assert pytest.approx(1 / 3.6) == KMH_TO_MS
 
 
 def test_kmhs_to_ms2_is_the_same_factor():
     """1 km/h/s = 1/3.6 m/s^2. Confusing these is a factor-3.6 error."""
-    assert KMHS_TO_MS2 == pytest.approx(1 / 3.6)
+    assert pytest.approx(1 / 3.6) == KMHS_TO_MS2
     assert ms2(3.0) == pytest.approx(0.8333, abs=1e-4)
 
 

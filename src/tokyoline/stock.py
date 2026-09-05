@@ -130,7 +130,7 @@ class TrainSpec:
     # -------------------------------------------------------------- loading
 
     @classmethod
-    def from_json(cls, path: Path | str, key: str = "E235-0") -> "TrainSpec":
+    def from_json(cls, path: Path | str, key: str = "E235-0") -> TrainSpec:
         """Build a spec from the provenance-tagged JSON data file."""
         with open(path, encoding="utf-8") as fh:
             blob = json.load(fh)

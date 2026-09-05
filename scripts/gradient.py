@@ -28,9 +28,14 @@ from _env import ensure
 
 ensure()
 
-from tokyoline import BrakeProfile, build_model, load_segments, simulate_segment  # noqa: E402
-from tokyoline.energy import JOULES_PER_KWH, segment_energy  # noqa: E402
-from tokyoline.units import G  # noqa: E402
+from tokyoline import (
+    BrakeProfile,
+    build_model,
+    load_segments,
+    simulate_segment,
+)
+from tokyoline.energy import JOULES_PER_KWH, segment_energy
+from tokyoline.units import G
 
 traction, brake = build_model(load_factor=1.0)
 V_LIMIT = traction.spec.max_speed_ms
@@ -130,7 +135,7 @@ print(f"  {'graded, inner loop':<28} {inner_total:10.1f}s "
       f"{inner_total-flat_total:+9.1f}s {inner_energy/JOULES_PER_KWH:11.1f}kWh")
 
 print()
-print(f"  net climb around the loop: 0 m exactly -- it is a closed circuit, so")
+print("  net climb around the loop: 0 m exactly -- it is a closed circuit, so")
 print("  gravitational work cancels by construction.")
 print()
 print("  But run time does NOT cancel. Both directions come out slower than flat,")
@@ -148,7 +153,7 @@ print()
 print("=" * 80)
 print("VERDICT")
 print("=" * 80)
-print(f"  Under gradients that are known to be EXAGGERATED, the circuit run time")
+print("  Under gradients that are known to be EXAGGERATED, the circuit run time")
 print(f"  moves by {abs(pct_time):.2f}% and energy by {abs(pct_energy):.2f}%. Against a")
 print("  measured recovery-margin signal of a few percent, that is not negligible")
 print("  at the per-segment level -- the worst single segment shifts by")

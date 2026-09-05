@@ -24,7 +24,7 @@ viz = ["plotly>=5.18", "streamlit>=1.30"]
 # Optional: run the GUI in a native desktop window instead of a browser tab.
 app = ["plotly>=5.18", "streamlit>=1.30", "pywebview>=4.4"]
 # Test suite. `pip install -e ".[dev]"` then `pytest`.
-dev = ["pytest>=7.0"]
+dev = ["pytest>=7.0", "ruff>=0.6"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -32,3 +32,32 @@ where = ["src"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
+
+[tool.ruff]
+line-length = 88
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM", "RUF"]
+ignore = [
+    # dict(...) is used deliberately for Plotly and Matplotlib keyword blocks,
+    # where it reads better than a brace literal and diffs one line at a time.
+    "C408",
+    # Long explanatory lines in docstrings are the point of them.
+    "E501",
+    # Japanese terms and the per-mille sign are deliberate: they are the exact
+    # words the sources use, and replacing them would obscure provenance.
+    "RUF001", "RUF002", "RUF003",
+    # zip() over successive pairs is clear as written; strict= adds noise to
+    # comparisons of a list with its own tail, where lengths differ by design.
+    "B905", "RUF007",
+    # An explicit if/else reads better than a ternary inside the braking
+    # integrator, where the two branches are ramp-up and ramp-down.
+    "SIM108",
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Scripts import after calling ensure(), which is the whole purpose of the guard.
+"scripts/*" = ["E402"]
+"app.py" = ["E402"]
+"tests/*" = ["E402"]

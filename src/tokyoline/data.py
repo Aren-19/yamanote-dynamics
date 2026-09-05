@@ -48,7 +48,7 @@ class Segment:
     def __str__(self) -> str:
         return f"{self.from_station} -> {self.to_station} ({self.distance_m:.0f} m)"
 
-    def reversed_grade(self) -> "Segment":
+    def reversed_grade(self) -> Segment:
         """The same segment travelled the other way round the loop."""
         return Segment(self.index, self.to_station, self.from_station,
                        self.distance_m, -self.grade_permille)

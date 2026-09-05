@@ -74,7 +74,7 @@ class SegmentResult:
         )
 
 
-def _applied_force(traction: TractionModel, v: float, phase: "Phase",
+def _applied_force(traction: TractionModel, v: float, phase: Phase,
                    kinematics: dict) -> float:
     """Tractive force actually applied in a given control phase, in newtons.
 
@@ -219,7 +219,8 @@ def simulate_segment(
                 else:
                     lo = mid
             if accel_fn is None:
-                x, v = x + v * hi, v
+                # Cruise: speed is held by construction, only position moves.
+                x = x + v * hi
             else:
                 x, v = _rk4_step(x, v, hi, accel_fn)
                 if not coasting and v > v_limit:

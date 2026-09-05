@@ -24,7 +24,7 @@ from _env import ensure
 
 ensure()
 
-from tokyoline.odpt import (  # noqa: E402
+from tokyoline.odpt import (
     KEY_ENV,
     YAMANOTE,
     OdptClient,

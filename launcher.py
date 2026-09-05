@@ -28,10 +28,10 @@ import subprocess
 import sys
 import threading
 import time
-from collections import deque
 import urllib.error
 import urllib.request
 import webbrowser
+from collections import deque
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent

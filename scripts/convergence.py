@@ -10,7 +10,7 @@ from _env import ensure
 
 ensure()
 
-from tokyoline import build_model, load_segments, simulate_segment  # noqa: E402
+from tokyoline import build_model, load_segments, simulate_segment
 
 traction, brake = build_model(load_factor=1.0)
 segments = load_segments()

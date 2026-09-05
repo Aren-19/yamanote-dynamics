@@ -168,7 +168,7 @@ class BrakeProfile:
         Returns arrays keyed 't', 'v', 'x', 'a'.
         """
         t_total = self.time_to_stop(v0)
-        n = max(int(math.ceil(t_total / dt)) + 1, 2)
+        n = max(math.ceil(t_total / dt) + 1, 2)
         t = np.linspace(0.0, t_total, n)
 
         j = self.jerk
@@ -469,7 +469,7 @@ class SpeedDependentBrakeProfile:
             z = np.zeros(2)
             return {"t": z, "v": z, "x": z, "a": z}
 
-        n = max(int(math.ceil(total / dt)) + 1, 2)
+        n = max(math.ceil(total / dt) + 1, 2)
         grid = np.linspace(0.0, total, n)
         out = {
             "t": grid,

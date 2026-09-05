@@ -36,7 +36,6 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from dataclasses import dataclass, field
-from datetime import datetime
 from pathlib import Path
 
 PUBLIC_ENDPOINT = "https://api-public.odpt.org/api/v4"
@@ -64,7 +63,7 @@ class OdptClient:
     timeout_s: float = 45.0
 
     @classmethod
-    def from_env(cls) -> "OdptClient":
+    def from_env(cls) -> OdptClient:
         return cls(consumer_key=os.environ.get(KEY_ENV) or None)
 
     @property

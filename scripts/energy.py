@@ -6,8 +6,8 @@ from _env import ensure
 
 ensure()
 
-from tokyoline import build_model, load_segments, simulate_segment  # noqa: E402
-from tokyoline.energy import (  # noqa: E402
+from tokyoline import build_model, load_segments, simulate_segment
+from tokyoline.energy import (
     AUXILIARY_KW,
     JOULES_PER_KWH,
     REGEN_CUTOFF_KMH,
@@ -16,7 +16,7 @@ from tokyoline.energy import (  # noqa: E402
     circuit_energy,
     segment_energy,
 )
-from tokyoline.validate import load_practice  # noqa: E402
+from tokyoline.validate import load_practice
 
 traction, brake = build_model(load_factor=1.0)
 segments = load_segments()
@@ -111,7 +111,7 @@ print(f"  at {pax:.0f} passengers aboard      "
       f"{total.wh_per_passenger_km(pax):.1f} Wh per passenger-km")
 per_car = total.kwh_per_car_km(n_cars)
 print()
-print(f"  Published heavy-metro consumption is typically 2-4 kWh per car-km.")
+print("  Published heavy-metro consumption is typically 2-4 kWh per car-km.")
 if 2.0 <= per_car <= 4.0:
     print(f"  {per_car:.2f} sits inside that band.")
 else:
@@ -164,8 +164,9 @@ print()
 print("=" * 78)
 print("EXTERNAL CROSS-CHECK  --  JR East's published regeneration rate")
 print("=" * 78)
-import json  # noqa: E402
-from tokyoline.data import DATA_DIR  # noqa: E402
+import json
+
+from tokyoline.data import DATA_DIR
 
 with open(DATA_DIR / "regeneration.json", encoding="utf-8") as fh:
     reg = json.load(fh)["regeneration_rate"]

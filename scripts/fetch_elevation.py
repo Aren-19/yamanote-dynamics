@@ -33,14 +33,13 @@ import sys
 import time
 import urllib.error
 import urllib.request
-from pathlib import Path
 
 from _env import ensure
 
 ensure()
 
-from tokyoline.data import DATA_DIR, load_segments  # noqa: E402
-from tokyoline.network import load_coordinates  # noqa: E402
+from tokyoline.data import DATA_DIR, load_segments
+from tokyoline.network import load_coordinates
 
 ENDPOINT = "https://api.open-elevation.com/api/v1/lookup"
 

@@ -6,15 +6,15 @@ from _env import ensure
 
 ensure()
 
-from tokyoline import build_model, load_segments  # noqa: E402
-from tokyoline.coasting import (  # noqa: E402
+from tokyoline import build_model, load_segments
+from tokyoline.coasting import (
     evaluate,
     pareto_front,
     solve_coast_for_time,
     solve_speed_for_time,
 )
-from tokyoline.energy import JOULES_PER_KWH  # noqa: E402
-from tokyoline.validate import load_anchors  # noqa: E402
+from tokyoline.energy import JOULES_PER_KWH
+from tokyoline.validate import load_anchors
 
 traction, brake = build_model(load_factor=1.0)
 segments = load_segments()

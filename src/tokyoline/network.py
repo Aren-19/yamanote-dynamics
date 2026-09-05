@@ -44,7 +44,7 @@ class LoopGeometry:
     total_m: float
 
     @classmethod
-    def build(cls, segments: list[Segment] | None = None) -> "LoopGeometry":
+    def build(cls, segments: list[Segment] | None = None) -> LoopGeometry:
         segments = segments or load_segments()
         coords = load_coordinates()
 

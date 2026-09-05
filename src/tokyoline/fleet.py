@@ -27,7 +27,6 @@ Three things this module is careful about:
 from __future__ import annotations
 
 import json
-import math
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -39,7 +38,7 @@ from .brake import (
     SpeedDependentBrakeProfile,
 )
 from .data import DATA_DIR
-from .units import KMHS_TO_MS2, KMH_TO_MS
+from .units import KMH_TO_MS, KMHS_TO_MS2
 
 
 @dataclass(frozen=True)

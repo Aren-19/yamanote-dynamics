@@ -6,8 +6,8 @@ from _env import ensure
 
 ensure()
 
-from tokyoline import BrakeProfile, build_model, load_segments  # noqa: E402
-from tokyoline.validate import (  # noqa: E402
+from tokyoline import BrakeProfile, build_model, load_segments
+from tokyoline.validate import (
     decompose,
     dwell_implied_by_margin,
     dwell_implied_by_zero_margin,

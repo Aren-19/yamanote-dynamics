@@ -19,6 +19,7 @@ Import and call `ensure()` as the first statement of every script.
 
 from __future__ import annotations
 
+import contextlib
 import sys
 from pathlib import Path
 
@@ -53,11 +54,9 @@ def _force_utf8_stdout() -> None:
     ensure() before doing anything else.
     """
     for stream in (sys.stdout, sys.stderr):
-        try:
+        # Already detached, or replaced by something without reconfigure.
+        with contextlib.suppress(AttributeError, ValueError):
             stream.reconfigure(encoding="utf-8", errors="replace")
-        except (AttributeError, ValueError):
-            # Already detached, or replaced by something without reconfigure.
-            pass
 
 
 def ensure(extra: tuple[str, ...] = (), *, streamlit_app: str | None = None) -> None:
@@ -111,8 +110,8 @@ def ensure(extra: tuple[str, ...] = (), *, streamlit_app: str | None = None) -> 
     if not in_venv and VENV_PY.exists():
         lines += [
             f"  You are running:  {running}",
-            f"  but this project's dependencies are installed in its virtual",
-            f"  environment only.",
+            "  but this project's dependencies are installed in its virtual",
+            "  environment only.",
             "",
             "  Run it with the venv interpreter:",
             "",

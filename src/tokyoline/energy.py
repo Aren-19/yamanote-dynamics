@@ -28,7 +28,7 @@ fraction for the E235 on the Yamanote.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 import numpy as np
 
@@ -128,7 +128,7 @@ class EnergyBreakdown:
             return float("inf")
         return (self.net_j / JOULES_PER_KWH * 1000.0) / (self.distance_m / 1000.0) / passengers
 
-    def __add__(self, other: "EnergyBreakdown") -> "EnergyBreakdown":
+    def __add__(self, other: EnergyBreakdown) -> EnergyBreakdown:
         return EnergyBreakdown(
             traction_j=self.traction_j + other.traction_j,
             resistance_j=self.resistance_j + other.resistance_j,
@@ -206,6 +206,7 @@ def segment_energy(
     cum_regen = _cumtrapz(p_regen, t)
 
     aux_w = auxiliary_kw * 1000.0
+    # Hotel load is constant, so its cumulative form is linear in time.
     cum_aux = aux_w * t
     duration = float(t[-1])
 
@@ -234,7 +235,7 @@ def segment_energy(
         traction_j=cum_traction,
         resistance_j=cum_resistance,
         regenerated_j=cum_regen,
-        net_j=cum_traction + aux_w * t - cum_regen,
+        net_j=cum_traction + cum_aux - cum_regen,
     )
     return breakdown, profile
 

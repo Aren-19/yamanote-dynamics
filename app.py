@@ -23,16 +23,16 @@ from pathlib import Path
 # wrong interpreter produces an instruction rather than a traceback in the
 # browser. See scripts/_env.py.
 sys.path.insert(0, str(Path(__file__).resolve().parent / "scripts"))
-from _env import ensure  # noqa: E402
+from _env import ensure
 
 ensure(extra=("plotly", "pandas"), streamlit_app="app.py")
 
-import numpy as np  # noqa: E402
-import plotly.graph_objects as go  # noqa: E402
-import streamlit as st  # noqa: E402
-from plotly.subplots import make_subplots  # noqa: E402
+import numpy as np
+import plotly.graph_objects as go
+import streamlit as st
+from plotly.subplots import make_subplots
 
-from tokyoline import (  # noqa: E402
+from tokyoline import (
     CONDITIONS,
     BrakeProfile,
     DavisCoefficients,
@@ -45,9 +45,8 @@ from tokyoline import (  # noqa: E402
     simulate_circuit,
     simulate_segment,
 )
-from tokyoline.coasting import pareto_front  # noqa: E402
-from tokyoline.fleet import load_fleet, simulatable, to_train_spec  # noqa: E402
-from tokyoline.energy import (  # noqa: E402
+from tokyoline.coasting import pareto_front
+from tokyoline.energy import (
     AUXILIARY_KW,
     JOULES_PER_KWH,
     REGEN_CUTOFF_KMH,
@@ -56,6 +55,7 @@ from tokyoline.energy import (  # noqa: E402
     circuit_energy,
     segment_energy,
 )
+from tokyoline.fleet import load_fleet, simulatable, to_train_spec
 from tokyoline.segment import Phase
 from tokyoline.validate import (
     decompose,
@@ -471,7 +471,7 @@ def run_decompose(cls_key, load_factor, power_factor, jerk, brake_kmhs, speed_km
 
 
 def fmt_mmss(seconds: float) -> str:
-    s = int(round(seconds))
+    s = round(seconds)
     return f"{s // 60:d}:{s % 60:02d}"
 
 
@@ -531,7 +531,7 @@ def train_svg(colour: str) -> str:
 
 
 if "cls_key" not in st.session_state:
-    st.session_state.cls_key = list(_runnable)[0]
+    st.session_state.cls_key = next(iter(_runnable))
 
 for key, m in _runnable.items():
     on = st.session_state.cls_key == key
@@ -1139,15 +1139,18 @@ with view_net:
     TRAIN_TRACE = 3
 
     # --- instrument panels --------------------------------------------
+    # Reference lines are (value, colour). Their labels live in the subplot
+    # titles, because add_hline cannot be used on a figure that mixes 2D and
+    # 3D subplots -- see the note where they are drawn.
     panels = [
         (1, c_speed, f_v, "#9ACD32", "km/h",
-         [(speed_kmh, f"line limit {speed_kmh:.0f}", "#E5484D")]),
+         [(speed_kmh, "#E5484D")]),
         (2, c_accel, f_a, "#4FA3D1", "km/h/s",
-         [(spec.start_accel_ms2 * 3.6, "published start accel", "#3FB950"),
-          (-service_brake_kmhs, "published max service brake", "#E5484D")]),
-        (3, np.interp(ct, ct, c_force) / 1000.0, f_f, "#E4A11B", "kN", []),
+         [(spec.start_accel_ms2 * 3.6, "#3FB950"),
+          (-service_brake_kmhs, "#E5484D")]),
+        (3, c_force / 1000.0, f_f, "#E4A11B", "kN", []),
         (4, c_power, f_p, "#B98AE0", "kW",
-         [(traction.power_w / 1000.0, "one-hour rating", "#E5484D")]),
+         [(traction.power_w / 1000.0, "#E5484D")]),
         (5, c_res, f_r, "#7FB6A6", "kN", []),
     ]
 
@@ -1161,7 +1164,7 @@ with view_net:
         # Reference lines are drawn as traces rather than shapes: add_hline
         # with row/col inspects every trace for an `xaxis` property, which
         # Scatter3d does not have, and raises on a mixed 3D/2D figure.
-        for value, label, rcol in refs:
+        for value, rcol in refs:
             fig3.add_trace(go.Scatter(
                 x=[float(ct[0]), float(ct[-1])], y=[value, value], mode="lines",
                 line=dict(color=rcol, width=1, dash="dot"),
@@ -1193,7 +1196,7 @@ with view_net:
                 + [go.Scatter(x=[f_t[i]], y=[s[i]])
                    for s in (f_v, f_a, f_f, f_p, f_r)]
             ),
-            traces=[TRAIN_TRACE] + marker_traces,
+            traces=[TRAIN_TRACE, *marker_traces],
         )
         for i in range(N_FRAMES)
     ]
@@ -1443,7 +1446,7 @@ with view_net:
         st.dataframe(table, use_container_width=True, height=460, hide_index=True)
 
         st.divider()
-        st.markdown(f"**Busiest stations** — published boardings, FY2024")
+        st.markdown("**Busiest stations** — published boardings, FY2024")
         top = ridership.nsmallest(5, "rank_2024")[["name_en", "boardings_2024"]]
         for r in top.itertuples():
             st.progress(
