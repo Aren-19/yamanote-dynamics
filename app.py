@@ -1,17 +1,16 @@
-"""Streamlit GUI for the Yamanote dynamics model.
+"""Streamlit application for the Yamanote dynamics model.
 
 Two top-level views:
 
-  OPERATIONS  the line as an operator would look at it -- map, train position,
-              schedule, rail condition, station busyness. Readable at a glance.
-  ANALYSIS    the graphs, the physics, and the validation result, with the
-              working shown.
+  LINE       departure board, the model-versus-published comparison, the 2D
+             map and an animated 3D track view with synchronised instrument
+             panels.
+  TECHNICAL  segment profiles, traction curves, energy breakdown, the coasting
+             Pareto front, the validation ladder, parameter provenance and
+             sources.
 
-The split exists because the two audiences are different. Operations answers
-"where is the train and what is it doing"; Analysis answers "why should I
-believe any of this". Mixing them produces a dashboard that serves neither.
-
-Run with:  streamlit run app.py
+Launch with launcher.py (or run.bat), which starts the server and opens a
+native window. `streamlit run app.py` also works.
 """
 
 from __future__ import annotations

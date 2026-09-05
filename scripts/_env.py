@@ -40,6 +40,26 @@ def _relative(path: Path) -> str:
         return str(path)
 
 
+def _force_utf8_stdout() -> None:
+    """Make stdout UTF-8 regardless of the console code page.
+
+    The scripts print Japanese terms (基準運転時分, 回生率) and the per-mille
+    sign. On Windows, Python picks the locale encoding for stdout, which is
+    cp1252 when output is redirected to a file or a pipe — and cp1252 cannot
+    represent any of those characters, so the script dies with a
+    UnicodeEncodeError partway through printing a table.
+
+    Reconfiguring here fixes every script at once, since they all call
+    ensure() before doing anything else.
+    """
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")
+        except (AttributeError, ValueError):
+            # Already detached, or replaced by something without reconfigure.
+            pass
+
+
 def ensure(extra: tuple[str, ...] = (), *, streamlit_app: str | None = None) -> None:
     """Make the package importable, or explain clearly why it is not.
 
@@ -58,6 +78,8 @@ def ensure(extra: tuple[str, ...] = (), *, streamlit_app: str | None = None) -> 
     browser, points at a line in app.py, and gives no hint that the interpreter
     is the problem.
     """
+    _force_utf8_stdout()
+
     if SRC.is_dir() and str(SRC) not in sys.path:
         sys.path.insert(0, str(SRC))
 

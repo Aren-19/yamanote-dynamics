@@ -1,0 +1,7 @@
+# Normalise line endings. Files were uploaded from Windows with CRLF, which
+# made every line of every file show as changed when compared against a
+# Unix-checkout copy.
+* text=auto eol=lf
+
+*.png binary
+*.pdf binary
