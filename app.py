@@ -759,13 +759,23 @@ with view_board:
     now = datetime.now(timezone(timedelta(hours=9)))
     circuit_s = sum(run_times) + dwell_s * len(run_times)
 
-    b1, b2, b3, b4 = st.columns(4)
-    b1.metric("Tokyo time", now.strftime("%H:%M"), scenario_name, delta_color="off")
-    b2.metric("Headway", f"{headway_min:.1f} min", "modelled", delta_color="off")
+    # Single header row for the page. Merging the departure board, the
+    # comparison and the map into one view left circuit time and crowding
+    # stated twice; this is the one place they appear.
+    extra_t = (load_factor - 1.0) * spec.capacity * spec.passenger_mass_kg / 1000
+    b1, b2, b3, b4, b5, b6 = st.columns(6)
+    b1.metric("Tokyo time", now.strftime("%H:%M"), scenario_name,
+              delta_color="off")
+    b2.metric("Headway", f"{headway_min:.1f} min", "modelled",
+              delta_color="off")
     b3.metric("Circuit, modelled", fmt_mmss(circuit_s),
               f"published {fmt_mmss(PUBLISHED_LOOP_S)}", delta_color="off")
     b4.metric("Crowding", f"{crowding_pct}%",
-              scen["crowding_source"], delta_color="off")
+              f"{scen['crowding_source']}, {extra_t:+.0f} t", delta_color="off")
+    b5.metric("Rail", condition.name, cond_key, delta_color="off")
+    b6.metric("Top speed",
+              f"{max(r['max_speed_kmh'] for r in rows_b):.0f} km/h",
+              "modelled", delta_color="off")
 
     st.warning(
         "Modelled schedule, not a live feed. Departure times come from the "
@@ -1024,16 +1034,8 @@ with view_net:
     rows = run_loop(cls_key, load_factor, power_factor, jerk, brake_kmhs,
                     speed_kmh, dt)
 
-    c1, c2, c3, c4, c5 = st.columns(5)
-    c1.metric("Circuit time", fmt_mmss(circuit["total_time_s"]))
-    c2.metric("Published", fmt_mmss(PUBLISHED_LOOP_S),
-              f"{circuit['total_time_s'] - PUBLISHED_LOOP_S:+.0f} s",
-              delta_color="off")
-    c3.metric("Rail", condition.name)
-    c4.metric("Crowding", f"{crowding_pct}%",
-              f"{(load_factor - 1.0) * spec.capacity * spec.passenger_mass_kg / 1000:+.0f} t",
-              delta_color="off")
-    c5.metric("Top speed", f"{max(r['max_speed_kmh'] for r in rows):.0f} km/h")
+    # No metric row here: circuit time, crowding, rail and top speed are all
+    # stated in the page header above.
 
     # Station display data, shared by the live view and the 2D map below.
     board = {r.name_en: r.boardings_2024 for r in ridership.itertuples()}
