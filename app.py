@@ -57,6 +57,7 @@ from tokyoline.energy import (
     segment_energy,
 )
 from tokyoline.fleet import load_fleet, simulatable, to_train_spec
+from tokyoline.network import journey_time_s
 from tokyoline.segment import Phase
 from tokyoline.validate import (
     decompose,
@@ -725,31 +726,6 @@ view_board = view_truth = view_net = view_overview
 
 
 # =================================================================== BOARD
-
-def journey_time_s(from_idx: int, to_idx: int, run_times: list[float],
-                   dwell: float, outer: bool) -> float:
-    """Modelled time from one station to another, including intermediate dwells.
-
-    Segment i runs from station i to station i+1 in the outer-loop direction, so
-    the inner loop traverses the same segments backwards. Dwell is counted at
-    every intermediate stop but not at the destination.
-    """
-    n = len(run_times)
-    total = 0.0
-    i = from_idx
-    hops = 0
-    while i != to_idx and hops <= n:
-        if outer:
-            total += run_times[i % n]
-            i = (i + 1) % n
-        else:
-            total += run_times[(i - 1) % n]
-            i = (i - 1) % n
-        hops += 1
-        if i != to_idx:
-            total += dwell
-    return total
-
 
 with view_board:
     rows_b = run_loop(cls_key, load_factor, power_factor, jerk, brake_kmhs,

@@ -247,3 +247,34 @@ def simulate_circuit(
         dwell_s=dwell_s,
         total_time_s=total,
     )
+
+
+def journey_time_s(from_idx: int, to_idx: int, run_times: list[float],
+                   dwell_s: float, outer: bool) -> float:
+    """Modelled time between two stations, including intermediate dwells.
+
+    Segment i runs from station i to station i+1 in the outer-loop direction,
+    so travelling the inner loop traverses the same segments backwards: leaving
+    station i inbound means covering segment i-1.
+
+    Dwell is counted at every intermediate stop but not at the destination,
+    since a journey ends on arrival rather than on departure. A journey to the
+    starting station is zero, not a full circuit.
+    """
+    n = len(run_times)
+    if n == 0 or from_idx == to_idx:
+        return 0.0
+
+    total = 0.0
+    i = from_idx
+    for _ in range(n):
+        if outer:
+            total += run_times[i % n]
+            i = (i + 1) % n
+        else:
+            total += run_times[(i - 1) % n]
+            i = (i - 1) % n
+        if i == to_idx:
+            return total
+        total += dwell_s
+    return total

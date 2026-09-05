@@ -21,7 +21,13 @@ from .data import (
     load_spec,
     load_stations,
 )
-from .network import Circuit, LoopGeometry, load_coordinates, simulate_circuit
+from .network import (
+    Circuit,
+    LoopGeometry,
+    journey_time_s,
+    load_coordinates,
+    simulate_circuit,
+)
 from .resistance import DavisCoefficients, curve_resistance, grade_resistance
 from .segment import Phase, SegmentResult, simulate_segment
 from .stock import TrainSpec, adhesion_coefficient
@@ -46,6 +52,7 @@ __all__ = [
     "build_model",
     "curve_resistance",
     "grade_resistance",
+    "journey_time_s",
     "load_congestion",
     "load_coordinates",
     "load_ridership",
