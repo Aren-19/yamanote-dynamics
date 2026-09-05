@@ -24,7 +24,7 @@ viz = ["plotly>=5.18", "streamlit>=1.30"]
 # Optional: run the GUI in a native desktop window instead of a browser tab.
 app = ["plotly>=5.18", "streamlit>=1.30", "pywebview>=4.4"]
 # Test suite. `pip install -e ".[dev]"` then `pytest`.
-dev = ["pytest>=7.0", "ruff>=0.6"]
+dev = ["pytest>=7.0", "pytest-cov>=4.0", "ruff>=0.6"]
 
 [tool.setuptools.packages.find]
 where = ["src"]

@@ -33,7 +33,9 @@ jobs:
           ruff check .
 
       - name: Run tests
-        run: pytest
+        # A floor rather than a target. It is set below current coverage so it
+        # catches whole modules going untested, not small fluctuations.
+        run: pytest --cov=tokyoline --cov-report=term-missing --cov-fail-under=80
 
       - name: Run analysis scripts
         # The scripts are the project's real output. They exercise far more of
