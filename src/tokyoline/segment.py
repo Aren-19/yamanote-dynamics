@@ -28,6 +28,20 @@ import numpy as np
 from .brake import BrakeProfile
 from .traction import TractionModel
 
+_STALL_SPEED_MS = 1e-6
+"""Below this the train is at rest for every purpose here: 3.6 microns per hour."""
+
+
+class StalledRun(RuntimeError):
+    """The train came to rest short of the platform and cannot start again.
+
+    Two ways to provoke it: coasting from so early that resistance stops the
+    train before it reaches the brake curve, and a gradient steep enough that
+    full tractive effort cannot move it from rest. Both are physically real
+    outcomes rather than solver failures, so they are reported as their own
+    error instead of exhausting the step budget and blaming the integrator.
+    """
+
 
 class Phase(str, Enum):
     ACCEL = "accel"
@@ -238,6 +252,25 @@ def simulate_segment(
             forces.append(_applied_force(traction, v, phase, kinematics))
             phases.append(phase)
             break
+
+        # A train at rest with no net force forward will never move again: no
+        # tractive effort is applied while coasting, and on a steep enough
+        # climb there is not enough of it at rest. Either way the loop would
+        # run to max_steps and then report a convergence failure, which
+        # describes the solver rather than the cause.
+        if (accel_fn is not None and v_new < _STALL_SPEED_MS
+                and accel_fn(v_new) <= 0.0):
+            cause = (
+                f"coast onset at {coast_start_m:.0f} m is too early"
+                if coasting else
+                f"a gradient of {grade_permille:+.1f} per-mille is steeper "
+                f"than the train can start on"
+            )
+            raise StalledRun(
+                f"train came to rest {max(x_new, 0.0):.0f} m into a "
+                f"{distance_m:.0f} m "
+                f"segment and cannot restart: {cause}"
+            )
 
         t += dt
         x, v = x_new, v_new

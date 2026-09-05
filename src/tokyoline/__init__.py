@@ -29,7 +29,7 @@ from .network import (
     simulate_circuit,
 )
 from .resistance import DavisCoefficients, curve_resistance, grade_resistance
-from .segment import Phase, SegmentResult, simulate_segment
+from .segment import Phase, SegmentResult, StalledRun, simulate_segment
 from .stock import TrainSpec, adhesion_coefficient
 from .traction import TractionModel
 
@@ -46,6 +46,7 @@ __all__ = [
     "Segment",
     "SegmentResult",
     "SpeedDependentBrakeProfile",
+    "StalledRun",
     "TractionModel",
     "TrainSpec",
     "adhesion_coefficient",

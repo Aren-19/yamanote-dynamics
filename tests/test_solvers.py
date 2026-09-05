@@ -12,7 +12,14 @@ from __future__ import annotations
 
 import pytest
 
-from tokyoline import CONDITIONS, LoopGeometry, build_model, load_segments
+from tokyoline import (
+    CONDITIONS,
+    LoopGeometry,
+    StalledRun,
+    build_model,
+    load_segments,
+    simulate_segment,
+)
 from tokyoline.coasting import (
     evaluate,
     pareto_front,
@@ -117,6 +124,67 @@ def test_coasting_actually_coasts(model, long_segment):
                              speed_limit_ms=traction.spec.max_speed_ms, dt=0.1)
     assert s.coast_distance_m > 100.0
     assert 0.0 < s.coast_start_m < long_segment.distance_m
+
+
+# ------------------------------------------------------------ stalled runs
+
+def test_coasting_from_too_early_raises_rather_than_grinding(model, long_segment):
+    """Coast from the first metre and resistance stops the train long before
+    the platform. The solver used to integrate two million steps -- twenty-two
+    seconds -- and then report a convergence failure, which named the
+    integrator rather than the cause."""
+    traction, brake = model
+    with pytest.raises(StalledRun, match="coast onset"):
+        simulate_segment(traction, brake, long_segment.distance_m,
+                         speed_limit_ms=traction.spec.max_speed_ms,
+                         dt=0.1, coast_start_m=1.0)
+
+
+def test_an_unclimbable_gradient_raises(model, long_segment):
+    """The other way to stall: not enough tractive effort at rest. 200 per-mille
+    is far beyond anything adhesion rail does, which is the point."""
+    traction, brake = model
+    with pytest.raises(StalledRun, match="gradient"):
+        simulate_segment(traction, brake, long_segment.distance_m,
+                         speed_limit_ms=traction.spec.max_speed_ms,
+                         dt=0.1, grade_permille=200.0)
+
+
+def test_the_stall_is_reported_quickly(model, long_segment):
+    """A guard that takes as long as the step budget it replaces is no guard.
+    The bound is loose; the failure it catches was three orders of magnitude
+    slower."""
+    import time
+
+    traction, brake = model
+    start = time.perf_counter()
+    with pytest.raises(StalledRun):
+        simulate_segment(traction, brake, long_segment.distance_m,
+                         speed_limit_ms=traction.spec.max_speed_ms,
+                         dt=0.1, coast_start_m=1.0)
+    assert time.perf_counter() - start < 2.0
+
+
+def test_the_solver_lower_bound_never_stalls(model):
+    """solve_coast_for_time probes 5 percent of the distance to bracket its
+    search. If any real segment stalled there the solver would raise instead
+    of returning None, so this is what makes that bound safe."""
+    traction, brake = model
+    for seg in load_segments():
+        simulate_segment(traction, brake, seg.distance_m,
+                         speed_limit_ms=traction.spec.max_speed_ms,
+                         dt=0.1, coast_start_m=0.05 * seg.distance_m)
+
+
+def test_gradients_the_line_actually_has_do_not_stall(model, long_segment):
+    """34 per-mille is the published maximum, between Tabata and
+    Nishi-Nippori. Nothing near it should trip the guard."""
+    traction, brake = model
+    for grade in (-34.0, -20.0, 0.0, 20.0, 34.0, 60.0):
+        r = simulate_segment(traction, brake, long_segment.distance_m,
+                             speed_limit_ms=traction.spec.max_speed_ms,
+                             dt=0.1, grade_permille=grade)
+        assert r.run_time_s > 0.0
 
 
 # ---------------------------------------------------------- loop geometry
