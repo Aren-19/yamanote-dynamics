@@ -42,6 +42,7 @@ from tokyoline import (
     load_ridership,
     load_segments,
     load_spec,
+    load_stations,
     simulate_circuit,
     simulate_segment,
 )
@@ -292,6 +293,12 @@ def get_spec(cls_key: str = "E235-0"):
 @st.cache_resource
 def get_segments():
     return load_segments()
+
+
+@st.cache_data
+def get_stations():
+    """Station table, including JR East's published JY numbering."""
+    return load_stations()
 
 
 @st.cache_resource
@@ -1255,9 +1262,13 @@ with view_net:
         dim = st.radio("View", ["2D map", "3D speed profile"], horizontal=True,
                        label_visibility="collapsed")
 
-        board = {r.name_en: r.boardings_2024 for r in ridership.itertuples()}
-        b = np.array([board[n] for n in geom.names], dtype=float)
-        sizes = 9 + 30 * (np.sqrt(b) - np.sqrt(b.min())) / (np.sqrt(b.max()) - np.sqrt(b.min()))
+        # Station display data is prepared above, next to the live view.
+        # Major interchanges get bold type, as on the printed diagrams. The
+        # threshold is ridership, so the choice is data-driven rather than a
+        # hand-picked list.
+        major_cut = float(np.quantile(b, 0.72))
+        _st_df = get_stations()
+        jy = dict(zip(_st_df["name_en"], _st_df["jy_number"]))
 
         path_lat, path_lon = geom.closed_path()
         n_frames = 160
@@ -1298,13 +1309,39 @@ with view_net:
                 ))
             except ValueError:
                 pass
+            # Interchanges: a larger ringed symbol, as the printed maps use.
+            is_major = b >= major_cut
             fig.add_trace(go.Scatter(
-                x=geom.lon, y=geom.lat, mode="markers+text", name="Stations",
-                marker=dict(size=sizes, color="#FFFFFF",
-                            line=dict(color=INK, width=2)),
-                text=geom.names, textposition="top center",
-                textfont=dict(size=9.5, color=INK),
-                hovertext=hover, hoverinfo="text",
+                x=geom.lon[is_major], y=geom.lat[is_major], mode="markers",
+                marker=dict(size=17, color="#FFFFFF",
+                            line=dict(color=INK, width=2.6)),
+                hoverinfo="skip", showlegend=False,
+            ))
+            fig.add_trace(go.Scatter(
+                x=geom.lon[~is_major], y=geom.lat[~is_major], mode="markers",
+                marker=dict(size=10, color="#FFFFFF",
+                            line=dict(color=INK, width=2.0)),
+                hoverinfo="skip", showlegend=False,
+            ))
+
+            # Station number inside the symbol, line code and name beside it.
+            labels = [
+                f"<b>{n}</b>" if major else n
+                for n, major in zip(geom.names, is_major)
+            ]
+            fig.add_trace(go.Scatter(
+                x=geom.lon, y=geom.lat, mode="text", name="Stations",
+                text=labels, textposition="top center",
+                textfont=dict(size=10, color=INK),
+                hovertext=[f"{jy.get(n, '')} {h}" for n, h in zip(geom.names, hover)],
+                hoverinfo="text",
+            ))
+            fig.add_trace(go.Scatter(
+                x=geom.lon, y=geom.lat, mode="text",
+                text=[str(jy.get(n, "")).replace("JY", "") for n in geom.names],
+                textposition="middle center",
+                textfont=dict(size=7, color=MUTED),
+                hoverinfo="skip", showlegend=False,
             ))
             fig.add_trace(go.Scatter(
                 x=[train_lon[0]], y=[train_lat[0]], mode="markers", name="Train",
@@ -1422,10 +1459,12 @@ with view_net:
         )
         chart(fig)
         st.caption(
-            "Marker size is published JR East daily boardings, FY2024. The red "
-            "section is the only part of the line where segment loading is "
-            "measured. Position between stations is interpolated linearly: a "
-            "schematic, not a track alignment."
+            "Styled after JR East's own diagrams: station numbers inside the "
+            "symbols, bold names and larger symbols for the busiest stations "
+            "by published FY2024 boardings. The red section is the only part "
+            "of the line where segment loading is measured. Position between "
+            "stations is interpolated linearly: a schematic, not a track "
+            "alignment."
         )
 
     # ---- schedule --------------------------------------------------------

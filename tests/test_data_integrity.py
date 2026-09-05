@@ -69,6 +69,28 @@ def test_every_segment_is_a_plausible_length():
         assert 400 <= s.distance_m <= 2100, s
 
 
+def test_jy_numbering_is_complete_and_unique():
+    """JR East's published station numbering. JY01 to JY30, each used once."""
+    df = load_stations()
+    numbers = df["jy_number"].tolist()
+    assert len(set(numbers)) == 30
+    assert set(numbers) == {f"JY{i:02d}" for i in range(1, 31)}
+
+
+def test_jy_numbering_runs_opposite_to_the_file_order():
+    """JY01 is Tokyo and the numbers increase in the inner-loop direction,
+    while this file is ordered by outer-loop kilometrage from Shinagawa. If
+    they ever agree, one of the two has been renumbered by mistake."""
+    df = load_stations()
+    by_name = dict(zip(df["name_en"], df["jy_number"]))
+    assert by_name["Tokyo"] == "JY01"
+    assert by_name["Shinagawa"] == "JY25"
+    assert by_name["Shinjuku"] == "JY17"
+    assert by_name["Yurakucho"] == "JY30"
+    # Shinagawa is first in file order but numbered 25.
+    assert df.iloc[0]["name_en"] == "Shinagawa"
+
+
 # --------------------------------------------------------------- coordinates
 
 def test_coordinates_cover_every_station():
