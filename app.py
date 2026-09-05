@@ -213,7 +213,7 @@ def chart(fig, height: int | None = None) -> None:
     for ann in fig.layout.annotations or ():
         if ann.font is not None and ann.font.color == "#8CA0B3":
             ann.font.color = MUTED
-    st.plotly_chart(fig, use_container_width=True, config=PLOT_CONFIG)
+    st.plotly_chart(fig, width="stretch", config=PLOT_CONFIG)
 
 
 #: Operating scenarios. Headway and dwell are MODELLED; the peak congestion
@@ -549,7 +549,7 @@ for key, m in _runnable.items():
         unsafe_allow_html=True,
     )
     if st.sidebar.button(m.display_name, key=f"pick_{key}",
-                         use_container_width=True,
+                         width="stretch",
                          type="primary" if on else "secondary"):
         st.session_state.cls_key = key
         st.rerun()
@@ -1460,7 +1460,7 @@ with view_net:
                 "Run": f"{circuit['run_times'][i]:.0f}s",
                 "km": f"{(geom.cumulative_m[i] + seg.distance_m) / 1000:.1f}",
             })
-        st.dataframe(table, use_container_width=True, height=460, hide_index=True)
+        st.dataframe(table, width="stretch", height=460, hide_index=True)
 
         st.divider()
         st.markdown("**Busiest stations** — published boardings, FY2024")
