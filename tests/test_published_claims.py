@@ -194,6 +194,57 @@ def test_input_rounding_dominates_integration_error(runs):
     assert abs(coarse - fine) < 0.01
 
 
+def test_eleven_of_thirty_segments_never_reach_line_speed(runs):
+    """README: a speed restriction costs nothing where the train would not have
+    reached it, and on a third of the line it would not have.
+
+    Those segments are short enough that the train is still accelerating when
+    it must start braking, so the peak is set by the distance."""
+    *_, results = runs
+    below = [r for r in results if not r.reached_line_speed]
+    assert len(below) == 11
+    assert min(r.max_speed_kmh for r in below) == pytest.approx(67.3, abs=0.5)
+
+
+def test_a_51_kmh_line_wide_cap_would_absorb_the_whole_residual(runs):
+    """README: restrictions alone could explain the 598 s residual only under
+    a line-wide cap 43 percent below the published 90 km/h line speed.
+
+    The bound works because run time falls strictly with the speed limit, so a
+    uniform cap is an upper bound on any set of per-segment restrictions no
+    lower than it."""
+    traction, brake, segments, _ = runs
+
+    def circuit(cap_kmh):
+        return sum(
+            simulate_segment(traction, brake, s.distance_m,
+                             speed_limit_ms=cap_kmh / 3.6, dt=0.1).run_time_s
+            for s in segments
+        )
+
+    baseline = circuit(90.0)
+    lo, hi = 20.0, 90.0
+    for _ in range(20):
+        mid = 0.5 * (lo + hi)
+        if circuit(mid) - baseline > 598.0:
+            lo = mid
+        else:
+            hi = mid
+    assert 49.0 < 0.5 * (lo + hi) < 53.0
+
+
+def test_a_severe_75_kmh_cap_accounts_for_a_seventh_of_the_residual(runs):
+    """README: the realistic order of the restriction effect. Stated so the
+    bound is not read as a claim that restrictions are large."""
+    traction, brake, segments, _ = runs
+    cost = sum(
+        simulate_segment(traction, brake, s.distance_m,
+                         speed_limit_ms=75.0 / 3.6, dt=0.1).run_time_s
+        for s in segments
+    ) - 2309.0
+    assert 0.10 < cost / 598.0 < 0.20
+
+
 def test_e7_stops_in_5670_m_from_275_kmh():
     """README: 'Integrating the real curve gives a 5,670 m stop'."""
     e7 = load_fleet()["E7"]

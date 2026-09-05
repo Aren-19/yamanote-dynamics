@@ -45,7 +45,7 @@ jobs:
         # the code than the unit tests and have caught encoding and import
         # regressions that the tests did not.
         run: |
-          for s in smoke_check convergence validate fleet energy gradient; do
+          for s in smoke_check convergence validate fleet energy gradient restrictions; do
             echo "--- $s ---"
             python "scripts/$s.py" > /dev/null
           done

@@ -81,6 +81,7 @@ Analysis scripts must use the virtual environment's interpreter:
 | `energy.py` | Energy accounting and balance check |
 | `coasting.py` | Four-phase solver and Pareto front |
 | `gradient.py` | Bounding study for the flat-track assumption |
+| `restrictions.py` | Bounding study for the no-speed-restrictions assumption |
 | `measure_dwell.py` | Live dwell measurement (needs an ODPT key) |
 
 ### Tests
@@ -169,6 +170,17 @@ strategy along it.
 gradient, circuit run time moves 0.46% while the worst single segment shifts
 7.7 s. The flat-track assumption is safe for the circuit-level result and
 unsafe for any per-segment claim.
+
+**Speed restrictions.** The model runs at the 90 km/h line speed throughout;
+real curve, turnout and signal limits are not published. Run time falls
+strictly with the speed limit, so a uniform cap bounds any set of per-segment
+restrictions above it. A severe line-wide 75 km/h cap costs 85 s, 14% of the
+residual. Restrictions could account for the *whole* 598 s only under a
+line-wide 51 km/h cap — 43% below the published line speed. At the circuit
+level a uniform restriction is observationally equivalent to recovery margin;
+what separates them is the published line speed, not the loop time. Eleven of
+30 segments never reach 90 km/h in any case, the shortest peaking at 67 km/h,
+so a restriction there is free.
 
 ## Data sources
 
