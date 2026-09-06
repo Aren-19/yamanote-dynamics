@@ -94,7 +94,7 @@ Analysis scripts must use the virtual environment's interpreter:
 .venv\Scripts\python.exe -m pytest
 ```
 
-164 tests, 91% coverage of the package. Most assert identities and bounds
+91% coverage of the package. Most tests assert identities and bounds
 rather than pinning numbers — energy conservation, exact platform arrival,
 monotonicity of resistance and run time, the jerk penalty being independent of
 initial speed, the adhesion ceiling never binding for this class. A separate
