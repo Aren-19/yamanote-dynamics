@@ -36,7 +36,6 @@ class TrainSpec:
     body_height_m: float
     car_length_m: float
 
-
     def mass_kg(self, load_factor: float = 0.0) -> float:
         """Static mass at a given load."""
         return self.tare_mass_kg + load_factor * self.capacity * self.passenger_mass_kg
@@ -49,7 +48,6 @@ class TrainSpec:
         """Mass carried on powered axles, which is what generates adhesion."""
         return self.mass_kg(load_factor) * self.adhesive_mass_fraction
 
-
     @property
     def frontal_area_m2(self) -> float:
         """Body width x height above rail."""
@@ -58,7 +56,6 @@ class TrainSpec:
     @property
     def train_length_m(self) -> float:
         return self.n_cars * self.car_length_m
-
 
     def tractive_effort_limit(self, resistance_at_rest_n: float,
                               load_factor: float = 0.0) -> float:
@@ -73,7 +70,6 @@ class TrainSpec:
     def adhesion_limit_n(self, v_ms: float, load_factor: float = 0.0) -> float:
         """Ceiling on tractive effort set by wheel-rail friction, in newtons."""
         return adhesion_coefficient(v_ms) * self.adhesive_mass_kg(load_factor) * G
-
 
     @classmethod
     def from_json(cls, path: Path | str, key: str = "E235-0") -> TrainSpec:

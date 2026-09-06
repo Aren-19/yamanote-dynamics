@@ -31,7 +31,6 @@ def long_segment():
     return max(load_segments(), key=lambda s: s.distance_m)
 
 
-
 def test_coast_solver_hits_the_requested_time(model, long_segment):
     """The check that would have caught the inverted bisection flag: a solver."""
     traction, brake = model
@@ -113,7 +112,6 @@ def test_coasting_actually_coasts(model, long_segment):
     assert 0.0 < s.coast_start_m < long_segment.distance_m
 
 
-
 def test_coasting_from_too_early_raises_rather_than_grinding(model, long_segment):
     """Coast from the first metre and resistance stops the train long before."""
     traction, brake = model
@@ -162,7 +160,6 @@ def test_gradients_the_line_actually_has_do_not_stall(model, long_segment):
         assert r.run_time_s > 0.0
 
 
-
 @pytest.fixture(scope="module")
 def geom():
     return LoopGeometry.build()
@@ -203,7 +200,6 @@ def test_closed_path_repeats_the_first_station(geom):
     assert lon[0] == lon[-1]
 
 
-
 def test_circuit_totals_are_consistent(model):
     traction, brake = model
     segments = load_segments()
@@ -238,7 +234,6 @@ def test_circuit_sample_wraps(model):
     a = c.sample(10.0)
     b = c.sample(10.0 + c.total_time_s)
     assert a["distance_m"] == pytest.approx(b["distance_m"])
-
 
 
 def test_worse_rail_lowers_the_adhesion_ceiling():

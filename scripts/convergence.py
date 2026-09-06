@@ -49,7 +49,6 @@ print("  RK4 is 4th order, so halving dt should cut the error by roughly 16x")
 print("  in the smooth regions. Phase-switch handling limits the observed order.")
 
 
-
 print()
 print()
 print("Distance quantization: what the integrator cannot fix")

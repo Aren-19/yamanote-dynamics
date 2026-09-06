@@ -126,6 +126,7 @@ def train_mesh(geom, d0: float) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     north = along * fy + across * fx
     return (lon0 + east / m_per_deg_lon, lat0 + north / M_PER_DEG_LAT, up)
 
+
 #: Chart toolbar, always shown rather than on hover.
 PLOT_CONFIG = {
     "displayModeBar": True,
@@ -273,8 +274,6 @@ PHASE_COLOUR = {
 LAT_DEG_KM = 111.13
 LON_DEG_KM = 90.4
 ASPECT = LAT_DEG_KM / LON_DEG_KM
-
-
 
 
 @st.cache_resource
@@ -482,7 +481,6 @@ def fmt_mmss(seconds: float) -> str:
     return f"{s // 60:d}:{s % 60:02d}"
 
 
-
 segments = get_segments()
 geom = get_geometry()
 anchors = get_anchors()
@@ -661,7 +659,6 @@ st.sidebar.caption(
     f"max effort {traction.max_effort_n/1000:.0f} kN · "
     f"stop from 90 {brake.distance_to_stop(25.0):.0f} m"
 )
-
 
 
 st.markdown(

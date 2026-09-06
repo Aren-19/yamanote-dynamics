@@ -28,7 +28,6 @@ def segments():
     return load_segments()
 
 
-
 def test_kmh_to_ms_exact():
     assert ms(90.0) == pytest.approx(25.0)
     assert pytest.approx(1 / 3.6) == KMH_TO_MS
@@ -38,7 +37,6 @@ def test_kmhs_to_ms2_is_the_same_factor():
     """1 km/h/s = 1/3.6 m/s^2. Confusing these is a factor-3.6 error."""
     assert pytest.approx(1 / 3.6) == KMHS_TO_MS2
     assert ms2(3.0) == pytest.approx(0.8333, abs=1e-4)
-
 
 
 def test_davis_is_monotonic_in_speed():
@@ -66,7 +64,6 @@ def test_estimated_coefficients_land_in_the_expected_band(model):
     assert 22.0 <= traction.davis.specific_n_per_tonne(25.0, mass) <= 38.0
 
 
-
 def test_adhesion_falls_with_speed():
     values = [adhesion_coefficient(v) for v in (0, 10, 20, 25)]
     assert all(b < a for a, b in zip(values, values[1:]))
@@ -75,7 +72,6 @@ def test_adhesion_falls_with_speed():
 def test_adhesion_never_binds_for_this_class(model):
     traction, _ = model
     assert not any(traction.adhesion_binds(i * 0.5) for i in range(51))
-
 
 
 def test_jerk_penalty_is_independent_of_initial_speed():
@@ -114,7 +110,6 @@ def test_brake_trajectory_ends_at_rest():
     assert traj["x"][-1] == pytest.approx(b.distance_to_stop(25.0), rel=1e-6)
 
 
-
 def test_effort_is_zero_at_maximum_speed(model):
     """The driver stops accelerating at the limit."""
     traction, _ = model
@@ -140,7 +135,6 @@ def test_effort_follows_constant_power_above_base_speed(model):
         if v < traction.spec.max_speed_ms:
             assert traction.effort_n(v) == pytest.approx(traction.power_w / v,
                                                          rel=1e-6)
-
 
 
 def test_train_stops_exactly_at_the_platform(model, segments):
@@ -195,7 +189,6 @@ def test_impossible_segment_is_rejected(model):
         simulate_segment(traction, brake, -5.0)
 
 
-
 def test_energy_balance_holds(model, segments):
     traction, brake = model
     for seg in segments[:8]:
@@ -232,7 +225,6 @@ def test_net_energy_falls_as_receptivity_rises(model, segments):
     nets = [segment_energy(r, traction, regen_receptivity=rec)[0].net_j
             for rec in (0.0, 0.5, 1.0)]
     assert all(b < a for a, b in zip(nets, nets[1:]))
-
 
 
 def test_effective_mass_exceeds_static_mass():

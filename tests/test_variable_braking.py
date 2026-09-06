@@ -28,7 +28,6 @@ def flat():
     return SpeedDependentBrakeProfile([(0, 4.2), (120, 4.2)], jerk=JERK)
 
 
-
 def test_flat_curve_matches_closed_form_distance(flat):
     exact = BrakeProfile(a_max=4.2 / 3.6, jerk=JERK)
     for v0 in (10.0, 17.0, 25.0):
@@ -41,7 +40,6 @@ def test_flat_curve_matches_closed_form_time(flat):
     for v0 in (10.0, 17.0, 25.0):
         assert flat.time_to_stop(v0) == pytest.approx(
             exact.time_to_stop(v0), abs=0.005)
-
 
 
 def test_rate_interpolates_between_published_points(e7_curve):
@@ -67,7 +65,6 @@ def test_rejects_bad_input():
         SpeedDependentBrakeProfile([(0, 2.0)], jerk=-1.0)
     with pytest.raises(ValueError):
         SpeedDependentBrakeProfile([(0, -2.0), (100, 2.0)], jerk=JERK)
-
 
 
 def test_speed_dependence_lengthens_the_stop(e7_curve):
@@ -106,7 +103,6 @@ def test_trajectory_never_exceeds_the_rate_limit(e7_curve):
     traj = p.trajectory(275 / 3.6, dt=0.02)
     for v, a in zip(traj["v"], traj["a"]):
         assert abs(a) <= p.rate_ms2(v) + 1e-6
-
 
 
 def test_drops_into_the_segment_solver():

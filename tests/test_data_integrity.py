@@ -25,7 +25,6 @@ VALID_STATUSES = {
 }
 
 
-
 def test_thirty_stations():
     assert len(load_stations()) == 30
     assert len(load_segments()) == 30
@@ -76,7 +75,6 @@ def test_jy_numbering_runs_opposite_to_the_file_order():
     assert df.iloc[0]["name_en"] == "Shinagawa"
 
 
-
 def test_coordinates_cover_every_station():
     coords = load_coordinates()
     names = {s.from_station for s in load_segments()}
@@ -87,7 +85,6 @@ def test_coordinates_are_inside_tokyo():
     coords = load_coordinates()
     assert coords["lat"].between(35.5, 35.9).all()
     assert coords["lon"].between(139.6, 139.9).all()
-
 
 
 def test_ridership_covers_every_station_exactly_once():
@@ -108,7 +105,6 @@ def test_ridership_is_ordered_by_rank():
     assert all(b <= a for a, b in zip(boardings, boardings[1:]))
     assert boardings[0] > 600_000       # Shinjuku
     assert boardings[-1] > 0
-
 
 
 def test_gradient_profile_covers_every_segment():
@@ -135,7 +131,6 @@ def test_gradients_are_consistent_with_rise_and_distance():
     for r in rows:
         expected = 1000.0 * float(r["rise_m"]) / float(r["distance_m"])
         assert float(r["grade_permille"]) == pytest.approx(expected, abs=0.01)
-
 
 
 def _tagged_nodes(node, path=""):
@@ -206,7 +201,6 @@ def test_prose_documented_files_still_cite_their_sources():
         assert "MLIT" in raw or "JR East" in raw or "国土交通省" in raw, filename
 
 
-
 def test_fleet_has_the_five_documented_classes():
     assert set(load_fleet()) == {"E235-0", "E233-0", "E5", "E7", "N700S"}
 
@@ -247,7 +241,6 @@ def test_motor_counts_are_consistent_with_formation():
     for m in load_fleet().values():
         assert 0 < m.n_motor_cars <= m.n_cars
         assert 0.0 < m.motored_fraction <= 1.0
-
 
 
 def test_congestion_records_only_the_measured_section():

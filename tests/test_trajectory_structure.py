@@ -37,7 +37,6 @@ def transitions(result):
     ]
 
 
-
 def test_phases_never_go_backwards(model, long_segment):
     seq = transitions(run(model, long_segment.distance_m))
     assert [p.value for p in seq] == ["accel", "cruise", "brake"]
@@ -63,7 +62,6 @@ def test_phase_order_holds_at_every_segment_length(model, distance):
     assert all(PHASE_ORDER[a] < PHASE_ORDER[b] for a, b in zip(seq, seq[1:])), (
         " -> ".join(p.value for p in seq)
     )
-
 
 
 def test_phase_times_sum_to_the_run_time(model, long_segment):
@@ -98,7 +96,6 @@ def test_every_array_has_the_same_length(model, long_segment):
     n = len(r.t)
     assert len(r.x) == len(r.v) == len(r.a) == len(r.phase) == n
     assert len(r.tractive_force_n) == n
-
 
 
 def test_no_tractive_effort_while_coasting_or_braking(model, long_segment):
@@ -136,7 +133,6 @@ def test_acceleration_signs_match_the_phase(model, long_segment):
     # The last sample of each phase sits on the boundary.
     assert (r.a[accel][:-1] > 0.0).all()
     assert (r.a[braking][:-1] < 0.0).all()
-
 
 
 def test_run_time_falls_as_the_speed_limit_rises(model, long_segment):

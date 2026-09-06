@@ -38,7 +38,6 @@ class BrakeProfile:
             return self.a_max
         return math.sqrt(max(v0, 0.0) * self.jerk)
 
-
     def phase_durations(self, v0: float) -> tuple[float, float, float]:
         """Durations of (ramp-in, hold, ramp-out) when stopping from `v0`."""
         v0 = max(v0, 0.0)
@@ -91,7 +90,6 @@ class BrakeProfile:
     def jerk_penalty_distance(self, v0: float) -> float:
         """Extra stopping distance attributable to the jerk limit, in metres."""
         return self.distance_to_stop(v0) - self.idealised_distance_to_stop(v0)
-
 
     def trajectory(self, v0: float, dt: float = 0.01) -> dict[str, np.ndarray]:
         """Sampled deceleration trajectory from `v0` to rest."""
@@ -169,7 +167,6 @@ class SpeedDependentBrakeProfile:
 
         self._build_table()
 
-
     def rate_ms2(self, v_ms):
         """Deceleration limit at this speed, m/s^2."""
         v_kmh = max(float(v_ms), 0.0) * 3.6
@@ -183,7 +180,6 @@ class SpeedDependentBrakeProfile:
     @property
     def speed_threshold_for_full_braking(self):
         return self.a_max ** 2 / self.jerk
-
 
     def _integrate(self, v0):
         """Integrate one stop from v0, returning sampled t, v, x, a."""
@@ -284,7 +280,6 @@ class SpeedDependentBrakeProfile:
         self._table_v2 = speeds * speeds
         self._table_d = np.array(dist)
         self._table_t = np.array(time)
-
 
     def distance_to_stop(self, v0):
         # Interpolated against v-squared, not v.

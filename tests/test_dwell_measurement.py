@@ -24,7 +24,6 @@ def stream(train: str, entries: list[tuple[float, str | None, str | None]]):
     ]
 
 
-
 def test_short_station_takes_the_last_segment():
     assert short_station("odpt.Station:JR-East.Yamanote.Shibuya") == "Shibuya"
     assert short_station(None) is None
@@ -35,7 +34,6 @@ def test_standing_is_defined_by_a_missing_destination():
     standing = Sample(0.0, "t", "r", "Ueno", None, 0)
     assert not running.standing
     assert standing.standing
-
 
 
 def test_bracketed_episode_is_detected_with_both_bounds():
@@ -128,7 +126,6 @@ def test_a_train_never_seen_standing_yields_nothing():
         (10.0, "Okachimachi", "Akihabara"),
     ])
     assert episodes_from_samples(s) == []
-
 
 
 def test_aggregate_uses_only_bracketed_episodes():

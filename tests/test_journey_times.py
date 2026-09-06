@@ -11,7 +11,6 @@ UNIFORM = [60.0, 60.0, 60.0, 60.0]
 DWELL = 30.0
 
 
-
 def test_journey_to_the_same_station_is_zero():
     """Not a full circuit. Someone asking for Shinjuku to Shinjuku wants."""
     assert journey_time_s(2, 2, UNIFORM, DWELL, True) == 0.0
@@ -20,7 +19,6 @@ def test_journey_to_the_same_station_is_zero():
 
 def test_empty_line_is_zero():
     assert journey_time_s(0, 1, [], DWELL, True) == 0.0
-
 
 
 def test_one_hop_outbound_is_a_single_run():
@@ -39,7 +37,6 @@ def test_three_hops_outbound_includes_two_dwells():
 def test_outbound_wraps_past_the_origin():
     assert journey_time_s(3, 0, UNIFORM, DWELL, True) == pytest.approx(60.0)
     assert journey_time_s(3, 1, UNIFORM, DWELL, True) == pytest.approx(150.0)
-
 
 
 def test_one_hop_inbound_traverses_the_preceding_segment():
@@ -62,7 +59,6 @@ def test_the_two_directions_cover_the_whole_ring():
         assert out_hops + inn_hops == 4
 
 
-
 def test_unequal_segments_make_the_directions_differ():
     """With uniform segments the two directions can coincide, which would hide."""
     uneven = [10.0, 20.0, 40.0, 80.0]
@@ -81,7 +77,6 @@ def test_a_full_circuit_either_way_is_the_same_total():
     inn = sum(journey_time_s(i, (i - 1) % n, uneven, 0.0, False) for i in range(n))
     assert out == pytest.approx(sum(uneven))
     assert inn == pytest.approx(sum(uneven))
-
 
 
 def test_real_line_journey_is_bounded_by_the_circuit():

@@ -60,7 +60,6 @@ class FleetMember:
 
     decel_is_ambiguous: bool = False
 
-
     @property
     def motored_fraction(self) -> float:
         return self.n_motor_cars / self.n_cars
@@ -95,7 +94,6 @@ class FleetMember:
 
     def specific_power_kw_per_passenger(self) -> float | Bounded:
         return self.total_power_kw / self.capacity
-
 
     def deceleration_at_kmh(self, v_kmh: float) -> float | None:
         """Service deceleration at a given speed, in km/h/s."""
