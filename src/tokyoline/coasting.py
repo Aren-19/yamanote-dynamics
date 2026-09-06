@@ -1,35 +1,19 @@
-"""Phase 6: optimal coasting and the energy-vs-run-time trade-off.
+"""Optimal coasting, and the energy against run-time trade-off.
 
-The known result from optimal control applied to train operation is that the
-energy-minimal way to cover a fixed distance in a fixed time is a four-phase
-profile:
+The energy-minimal way to cover a fixed distance in a fixed time is known to be
+accelerate, cruise, coast, brake. Taking that shape as given, the strategy is
+one number per segment: where coasting starts. Run time falls monotonically as
+that point moves later, so a bisection hits any achievable target, and sweeping
+the target traces the Pareto front.
 
-    maximum acceleration -> cruise -> coast -> maximum braking
+The comparison that means anything holds run time equal. Coasting beating a
+flat-out run is not a result, because the flat-out run is faster. A driver who
+wants to take longer can just cruise slower, so both strategies are solved to
+the same target time and compared.
 
-This module does not derive that result. It takes it as given and builds the
-solver, which is the useful part: with the shape fixed, the whole strategy
-collapses to ONE number per segment -- where coasting starts. Run time falls
-monotonically as that point moves later, so a bisection finds the coast onset
-that hits any achievable target time, and sweeping the target traces out the
-Pareto front. A one-dimensional search, not Pontryagin.
-
-**The comparison that makes it meaningful.** Showing that coasting saves energy
-against a flat-out run is not interesting, because the flat-out run is faster --
-of course it uses more. The honest comparison holds run time equal. A driver who
-wants to take longer without coasting has an obvious alternative: cruise slower.
-So this module solves both strategies to the same target time and compares:
-
-    coast   : accelerate to line speed, cruise, cut power, drift, brake
-    slower  : accelerate to a LOWER cruise speed, hold it, brake
-
-Both arrive at the same moment. The energy difference between them is the real
-saving attributable to coasting.
-
-**An interaction worth watching.** Coasting and regeneration are partial
-substitutes. Coasting saves energy by not spending it; regeneration saves energy
-by recovering what was spent. The more effective the regeneration, the less
-coasting adds on top. The scripts report the saving at several receptivities for
-exactly this reason.
+Coasting and regeneration are partial substitutes -- one saves energy by not
+spending it, the other by recovering it -- which is why the scripts report the
+saving at several receptivities.
 """
 
 from __future__ import annotations

@@ -1,13 +1,13 @@
 """Running, grade and curve resistance.
 
-The Davis coefficients here are MODELLED, not measured. Published per-class
-coefficient sets exist inside Japanese operators but are not released, and no
-credible published set for the E235 could be found. What follows is an estimate
-built from mass, car count and frontal area, with each physical contribution
-named separately so the assumption is auditable rather than a magic number.
+The Davis coefficients are modelled, not measured. Per-class sets exist inside
+Japanese operators but are not released, and none for the E235 could be found.
+These are estimated from mass, car count and frontal area with each
+contribution named separately, so the assumption can be audited rather than
+taken as a magic number.
 
-This is the largest single uncertainty in the physics core. Any agreement
-between simulation and timetable is conditional on it.
+This is the largest single uncertainty in the physics. Any agreement with the
+timetable is conditional on it.
 """
 
 from __future__ import annotations
@@ -19,18 +19,15 @@ from .units import RHO_AIR, G
 
 @dataclass(frozen=True)
 class DavisCoefficients:
-    """Running resistance as R(v) = A + B*v + C*v^2, with v in m/s, R in newtons.
+    """Running resistance R(v) = A + B*v + C*v^2, with v in m/s and R in newtons.
 
-    Note the units: railway literature usually writes Davis in km/h and kgf/t.
-    Everything here is SI so it can be dropped straight into F = ma.
+    Railway literature usually writes Davis in km/h and kgf/t. Everything here is
+    SI so it drops straight into F = ma.
 
-    Attributes
-    ----------
-    A : journal, bearing and rolling resistance. Roughly proportional to mass,
-        dominant at low speed, and the only term that survives at rest.
-    B : flange contact and track interaction. Linear in speed.
-    C : aerodynamic drag. Proportional to frontal area, and dominant above
-        roughly 80 km/h.
+    A is journal, bearing and rolling resistance: roughly proportional to mass,
+    dominant at low speed, and the only term left at rest. B is flange contact and
+    track interaction. C is aerodynamic drag, proportional to frontal area and
+    dominant above about 80 km/h.
     """
 
     A: float
@@ -65,27 +62,25 @@ class DavisCoefficients:
     ) -> DavisCoefficients:
         """Estimate Davis coefficients for a multiple unit.
 
-        Each keyword is a separate physical claim, so each can be challenged
-        independently:
+        Each keyword is a separate physical claim, so each can be challenged on its
+        own.
 
         journal_n_per_tonne
-            Rolling and bearing resistance at rest. Modern roller-bearing stock
-            sits around 8-15 N/t; 10 is taken as a central value.
+            Rolling and bearing resistance at rest. Modern roller-bearing stock sits
+            around 8-15 N/t; 10 is central.
         flange_n_per_tonne_per_kmh
-            Flange and track interaction, expressed per km/h because that is how
-            it is usually tabulated, then converted here.
+            Flange and track interaction, per km/h because that is how it is
+            tabulated, converted here.
         cd_ends
-            Combined pressure drag of nose and tail. A commuter EMU has a much
-            blunter nose than a Shinkansen, hence a value near 0.8 rather than
-            0.2.
+            Combined nose and tail pressure drag. A commuter EMU is far blunter than a
+            Shinkansen, hence 0.8 rather than 0.2.
         cd_per_car
-            Skin friction increment per car. On an 11-car train this roughly
-            doubles the total drag coefficient, which is the reason a long train
-            cannot be modelled as a single bluff body.
+            Skin friction per car. Over 11 cars this roughly doubles the total drag
+            coefficient, which is why a long train is not one bluff body.
 
-        For tunnel sections the aerodynamic term is substantially higher. That
-        is irrelevant for the Yamanote, which is overwhelmingly surface running,
-        but would become load-bearing for a Shinkansen extension.
+        The aerodynamic term is much higher in tunnels: irrelevant for the Yamanote,
+        which is overwhelmingly surface running, and load-bearing for anything
+        Shinkansen.
         """
         mass_t = mass_kg / 1000.0
 
@@ -113,29 +108,27 @@ class DavisCoefficients:
 def grade_resistance(mass_kg: float, grade_permille: float) -> float:
     """Gravitational resistance on a gradient, in newtons.
 
-    Japanese practice expresses gradient in per-mille, so for the small angles
-    involved sin(theta) is grade/1000 to well within any other error in the
-    model. Positive grade means uphill and therefore positive (retarding) force.
+    Japanese practice gives gradient in per-mille, and at these angles sin(theta)
+    is grade/1000 to well inside any other error here. Positive grade is uphill,
+    so a positive retarding force.
 
-    On the Yamanote this term is negligible -- the line is close to flat, and
-    per-segment gradient data is not public at usable precision anyway. It is
-    implemented for correctness and so the model generalises to lines where it
-    matters.
+    Negligible on the Yamanote, which is close to flat and has no public
+    per-segment gradient data at usable precision. Implemented for correctness, and
+    so the model carries over to lines where it matters.
     """
     return mass_kg * G * (grade_permille / 1000.0)
 
 
 def curve_resistance(mass_kg: float, radius_m: float | None,
                      coefficient: float = 600.0) -> float:
-    """Additional resistance on a curve, in newtons.
+    """Extra resistance on a curve, in newtons.
 
-    Empirical, of the form k / R. Several formulations with different constants
-    are in use; `coefficient` is in N*m per tonne and 600 is a common value for
-    standard gauge.
+    Empirical, of the form k / R. Several formulations are in use; `coefficient` is
+    in N*m per tonne and 600 is common for standard gauge.
 
-    Returns zero when `radius_m` is None, which is the honest default here:
-    per-segment curve radius data for the Yamanote is not available, so this
-    term is carried in the code and evaluated at zero. It is a small effect.
+    Returns zero when `radius_m` is None, which is the honest default: per-segment
+    curve radii for the Yamanote are not available, so the term is carried in the
+    code and evaluated at zero. The effect is small.
     """
     if radius_m is None or radius_m <= 0.0:
         return 0.0

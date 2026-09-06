@@ -1,21 +1,17 @@
-"""Single-segment run simulation: fixed-step RK4 with control-phase switching.
+"""One segment, solved with fixed-step RK4 and explicit phase switching.
 
-The control sequence is accelerate -> cruise -> (optionally coast) -> brake.
+The sequence is accelerate, cruise, optionally coast, brake.
 
-Why fixed-step rather than an adaptive solver: the interesting difficulty here
-is not stiffness, it is knowing exactly when to switch control phase. A fixed
-step makes phase transitions easy to reason about and easy to debug, and the
-step-size convergence study is then a one-line sweep. `scipy.integrate.solve_ivp`
-would handle the smooth parts more efficiently and the switching less clearly.
+Fixed step rather than an adaptive solver because the hard part is knowing when
+to switch phase, not stiffness. It also makes the convergence study a one-line
+sweep.
 
-The brake application point is found by intersecting the forward run curve with a
-brake curve integrated backwards from rest at the platform. Concretely: the
-trigger is ``x + distance_to_stop(v) >= L``, and the crossing is located by
-bisection inside the step where it first becomes true, then the exact closed-form
-brake trajectory is attached. Solving it this way is what keeps the train from
-overshooting the platform -- a purely forward solver that brakes only once it has
-already gone too far will always overshoot, and the overshoot grows with step
-size.
+The brake application point is where the forward run curve meets a brake curve
+integrated backwards from rest at the platform. The trigger is
+x + distance_to_stop(v) >= L, located by bisection inside the step where it
+first goes true, and the closed-form brake trajectory is attached there. A
+purely forward solver brakes only after overshooting, and the overshoot grows
+with step size.
 """
 
 from __future__ import annotations
@@ -33,13 +29,12 @@ _STALL_SPEED_MS = 1e-6
 
 
 class StalledRun(RuntimeError):
-    """The train came to rest short of the platform and cannot start again.
+    """The train stopped short of the platform and cannot start again.
 
-    Two ways to provoke it: coasting from so early that resistance stops the
-    train before it reaches the brake curve, and a gradient steep enough that
-    full tractive effort cannot move it from rest. Both are physically real
-    outcomes rather than solver failures, so they are reported as their own
-    error instead of exhausting the step budget and blaming the integrator.
+    Two ways in: coasting from so early that resistance stops it before the brake
+    curve, and a gradient too steep to start on. Both are real outcomes rather than
+    solver failures, so they get their own error instead of exhausting the step
+    budget and blaming the integrator.
     """
 
 
@@ -144,24 +139,18 @@ def simulate_segment(
     curve_radius_m: float | None = None,
     max_steps: int = 2_000_000,
 ) -> SegmentResult:
-    """Simulate one station-to-station run, starting and ending at rest.
+    """Simulate one station-to-station run, from rest to rest.
 
-    Parameters
-    ----------
-    distance_m : interstation distance.
-    speed_limit_ms : line speed limit. Defaults to the train's own maximum.
-        Per-segment restrictions from curves, turnouts and signalling are not
-        public for the Yamanote and are not modelled -- a stated limitation.
-    dt : fixed integration step, seconds. 0.01-0.1 is the sensible range.
-    coast_start_m : position at which to cut power and coast. `None` means no
-        coasting, which gives the minimum run time. This is the single free
-        parameter the optimal-driving solver bisects on.
+    `speed_limit_ms` defaults to the train's own maximum; per-segment restrictions
+    from curves, turnouts and signalling are not public for the Yamanote and are
+    not modelled. `dt` is the fixed step in seconds, sensibly 0.01 to 0.1.
+    `coast_start_m` is where power is cut, None for no coasting, and is the single
+    parameter the optimal-driving solver bisects on.
 
-    Returns the full trajectory plus a run time. The run time is a MINIMUM under
-    the stated assumptions: full available tractive effort throughout, braking at
-    the maximum service rate, no signal restrictions, no driver conservatism and
-    no recovery margin. It is meant to be compared against a real timetable, not
-    to reproduce one.
+    The run time is a minimum under the stated assumptions: full tractive effort
+    throughout, maximum service braking, no signal restrictions, no driver
+    conservatism, no margin. It is for comparing against a timetable, not for
+    reproducing one.
     """
     if distance_m <= 0.0:
         raise ValueError("distance_m must be positive")

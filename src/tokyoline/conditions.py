@@ -1,29 +1,18 @@
-"""Rail surface condition and its effect on braking.
+"""Rail surface condition, and what it does to braking.
 
-Why this is modelled as rail condition rather than "weather": the physics only
-cares about the wheel-rail friction coefficient. Air temperature, cloud cover
-and wind direction do not enter the equations of motion in any way this model
-can use, so pulling a live weather feed would decorate the interface without
-touching the simulation. What genuinely changes is adhesion, and adhesion has a
-real and measurable effect on stopping distance.
+Modelled as rail condition rather than weather because only the wheel-rail
+friction coefficient enters the equations. Temperature and wind would decorate
+the interface without changing a number.
 
-The important asymmetry, and the reason this is worth having at all:
+The asymmetry is the point. For traction the adhesion ceiling never binds on
+this class: only 6 of 11 cars are powered, but demanded effort is about half
+what even wet rail supplies. For braking every axle contributes, so the ceiling
+is mu*g on the full mass, around 3.2 m/s^2 dry against a 1.17 m/s^2 service
+rate. On badly contaminated rail it drops below the service rate and becomes
+the binding constraint.
 
-* For TRACTION the adhesion ceiling never binds on this class. Only 6 of 11
-  cars are powered, but demanded effort is roughly half what even wet rail can
-  supply. Degraded rail barely changes acceleration.
-
-* For BRAKING every axle contributes, so the ceiling is mu * g on the full train
-  mass. On dry rail that is around 3.2 m/s^2, far above the 1.17 m/s^2 service
-  rate, so the service rate governs. On badly contaminated rail the ceiling
-  drops BELOW the service rate and adhesion becomes the binding constraint.
-
-So the honest statement is: rail condition is almost irrelevant to how fast this
-train can accelerate, and decisive for how fast it can stop. That asymmetry is
-itself worth showing.
-
-All multipliers below are MODELLED. Published adhesion figures for specific rail
-conditions on this line do not exist.
+So rail condition barely touches acceleration and decides stopping distance.
+Every multiplier here is modelled; there are no published figures for this line.
 """
 
 from __future__ import annotations

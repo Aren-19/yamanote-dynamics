@@ -1,15 +1,11 @@
-"""Loop geometry and whole-circuit simulation, for the operations view.
+"""Loop geometry and whole-circuit simulation.
 
-Coordinates are used for DISPLAY ONLY. Every distance in the physics comes from
-published kilometrage. Mixing the two would reintroduce exactly the error that
-using published distances was meant to avoid, so the two never meet: this module
-maps a distance-along-the-loop onto a coordinate for drawing, and never the
-reverse.
+Coordinates are for drawing only; every distance in the physics comes from
+published kilometrage. The two never meet -- this maps a distance along the
+loop onto a coordinate, never the reverse.
 
-Position between stations is interpolated linearly between station coordinates.
-That is a schematic, not a track alignment -- real track curves between stations
-and the drawn line will cut corners. It is honest for showing where a train is
-in the sequence and dishonest if read as a survey.
+Position between stations is interpolated linearly. That is a schematic: fine
+for showing where a train is in the sequence, wrong if read as an alignment.
 """
 
 from __future__ import annotations
@@ -253,13 +249,12 @@ def journey_time_s(from_idx: int, to_idx: int, run_times: list[float],
                    dwell_s: float, outer: bool) -> float:
     """Modelled time between two stations, including intermediate dwells.
 
-    Segment i runs from station i to station i+1 in the outer-loop direction,
-    so travelling the inner loop traverses the same segments backwards: leaving
-    station i inbound means covering segment i-1.
+    Segment i runs from station i to i+1 outbound, so the inner loop traverses the
+    same segments backwards: leaving station i inbound covers segment i-1.
 
-    Dwell is counted at every intermediate stop but not at the destination,
-    since a journey ends on arrival rather than on departure. A journey to the
-    starting station is zero, not a full circuit.
+    Dwell counts at every intermediate stop but not at the destination, since a
+    journey ends on arrival. A journey to the starting station is zero, not a full
+    circuit.
     """
     n = len(run_times)
     if n == 0 or from_idx == to_idx:

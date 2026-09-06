@@ -1,11 +1,10 @@
 """Tests for the coasting solver, loop geometry and rail conditions.
 
-The coasting module previously shipped a bisection with an inverted
-monotonicity flag. It did not crash: it pinned the search at its lower bound
-and produced a plausible-looking table of savings that happened to be
-nonsense. Several tests here exist specifically to catch that class of failure,
-by checking that a solver actually hits the target it was asked for rather than
-merely returning a number.
+The coasting module once shipped a bisection with an inverted monotonicity
+flag. It did not crash: it pinned the search at its lower bound and produced a
+plausible table of savings that was nonsense. Several tests here exist to catch
+that class of failure, by checking a solver actually reaches the target it was
+given rather than just returning a number.
 """
 
 from __future__ import annotations

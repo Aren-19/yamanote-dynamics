@@ -93,33 +93,29 @@ class TrainSpec:
                               load_factor: float = 0.0) -> float:
         """Maximum tractive effort in the constant-effort region, in newtons.
 
-        Derived from the published starting acceleration rather than assumed.
-        The published figure (3.0 km/h/s for the E235) is a NET acceleration --
-        it is what the train actually achieves, so running resistance at rest
-        is already subtracted. Recovering the gross effort therefore means
+        Derived from the published starting acceleration rather than assumed. That
+        figure (3.0 km/h/s for the E235) is net -- what the train achieves, with
+        resistance at rest already subtracted -- so recovering gross effort means
         adding it back:
 
             F_max = m_eff * a_start + R(0)
 
-        The load condition for the published acceleration figure is not stated;
-        `load_factor` is the assumption, and it should be swept in sensitivity
-        analysis rather than trusted.
+        The load condition behind the published figure is not stated. `load_factor` is
+        that assumption and should be swept rather than trusted.
         """
         return self.effective_mass_kg(load_factor) * self.start_accel_ms2 + resistance_at_rest_n
 
     def base_speed_ms(self, resistance_at_rest_n: float,
                       load_factor: float = 0.0) -> float:
-        """Speed at which constant-effort gives way to constant-power.
+        """Speed where constant effort gives way to constant power.
 
-        Below this the traction system is current/adhesion limited and effort is
-        flat; above it the system is power limited and F = P/v.
+        Below it the system is current and adhesion limited and effort is flat; above
+        it F = P/v.
 
-        Caveat worth stating plainly: because `total_power_w` is the ONE-HOUR
-        rating and not the short-term overload capability of the inverters, this
-        base speed comes out lower than the real machine's. The model is
-        therefore pessimistic through the mid-speed region. That works AGAINST
-        the expected result (a simulation faster than the timetable), so any
-        measured fast bias is a lower bound, not an inflated one.
+        Because `total_power_w` is the one-hour rating rather than short-term inverter
+        overload, this base speed comes out lower than the real machine's and the model
+        is pessimistic through the mid-speed range. That works against the expected
+        result, so any measured fast bias is a lower bound.
         """
         return self.total_power_w / self.tractive_effort_limit(resistance_at_rest_n, load_factor)
 

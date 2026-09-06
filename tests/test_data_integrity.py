@@ -2,13 +2,13 @@
 
 The project's central claim is that every parameter is tagged with where it
 came from, and that bounds and gaps survive rather than quietly becoming point
-values. Nothing enforced that: a hand edit could drop a status tag, change a
-distance, or turn "under 700 t" into "700 t", and every downstream number would
-shift without complaint.
+values. Nothing enforced it: a hand edit could drop a tag, change a distance,
+or turn "under 700 t" into "700 t", and every downstream number would shift
+without complaint.
 
-These tests also check physical invariants of the data itself. The loop closes,
-so segment distances sum to the published total and the derived elevation
-profile returns to where it started.
+These also check the data's own physical invariants. The loop closes, so
+segment distances sum to the published total and the elevation profile returns
+to where it started.
 """
 
 from __future__ import annotations

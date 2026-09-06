@@ -1,15 +1,15 @@
 """Guard the numbers the README states publicly.
 
-Unlike the property tests, these deliberately pin specific values. The README
-makes quantitative claims to a reader who cannot run the code, so those claims
-need to fail loudly when the model moves rather than drift quietly out of date.
+Unlike the property tests these pin specific values, because the README makes
+quantitative claims to a reader who cannot run the code. They should fail
+loudly when the model moves rather than drift out of date.
 
-A failure here is not necessarily a bug. It may mean the model improved and the
-README needs updating. What it must never mean is that the published numbers
-are wrong and nobody noticed.
+A failure is not necessarily a bug: the model may have improved and the README
+may need updating. What it must never mean is that the published numbers are
+wrong and nobody noticed.
 
-Tolerances are wide enough to absorb integration noise and narrow enough to
-catch a real change in behaviour.
+Tolerances are wide enough for integration noise and narrow enough to catch a
+real change.
 """
 
 from __future__ import annotations

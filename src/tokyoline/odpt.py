@@ -1,30 +1,24 @@
-"""Measuring station dwell time from ODPT real-time train positions.
+"""Measuring station dwell from ODPT real-time train positions.
 
-Dwell is the one quantity this project needs and cannot derive. Circuit time =
-run time + margin + dwell is one equation in two unknowns, so Phase 3 has to
-infer dwell (39-50 s) from documented margin practice rather than measure it.
-This module is the path to measuring it directly.
+Dwell is the one quantity the project needs and cannot derive, so it is
+otherwise inferred from documented margin practice. This is the path to
+measuring it instead.
 
-**How it works, and why it works.** The `odpt:Train` feed reports each train's
-`odpt:fromStation` and `odpt:toStation`. The key property -- verified against the
-live feed, not assumed -- is that **`odpt:toStation` is null exactly when a train
-is standing at a platform**, with `fromStation` naming that platform. Once it
-departs, `toStation` is populated with the next station. So a dwell is simply a
-contiguous run of samples in which a given train reports no `toStation`.
+The odpt:Train feed reports fromStation and toStation. Checked against the live
+feed: toStation is null exactly when a train is standing at a platform, with
+fromStation naming it. A dwell is a contiguous run of samples with no
+toStation.
 
-**Polling makes every measurement interval-censored, and this module keeps it
-that way.** If a train is first seen standing at t1 and last seen standing at t2,
-the true dwell is at least t2 - t1, but no more than the gap between the last
-sample that showed it running and the first sample that shows it running again.
-Reporting the midpoint as though it were a measurement would overstate precision.
-Both bounds are carried through to the aggregate.
+Polling makes every measurement interval-censored, and it stays that way. A
+train first seen standing at t1 and last at t2 gives a dwell of at least
+t2 - t1, and at most the gap between the last and next samples showing it
+running. A midpoint would overstate the precision, so both bounds are carried
+through.
 
-**Access.** JR East real-time data requires a registered consumer key. The
-unauthenticated mirror at `api-public.odpt.org` carries only a subset of
-operators -- Toei at the time of writing, and no JR East at all -- so the
-Yamanote cannot be measured without a key. The public endpoint is still useful:
-it exercises this entire pipeline against real live data from another operator,
-which is a far better test than synthetic fixtures.
+JR East data needs a registered consumer key. The unauthenticated mirror
+carries only some operators and no JR East, so the Yamanote cannot be measured
+without one. It still exercises this pipeline against real live data, which
+beats synthetic fixtures.
 """
 
 from __future__ import annotations

@@ -1,21 +1,19 @@
-/* Yamanote model — application chrome.
+/* Application chrome.
  *
- * Light, paper-like, and deliberately restrained. Colour appears only where it
- * carries meaning: the route line, a status badge, a reference line on a chart.
- * Large flat areas stay white or near-white so the numbers are what stand out.
+ * Paper-like: white ground, thin rules, no rounded cards, no shadows. Colour
+ * only where it means something — the route, a warning, a reference line.
+ * Most of this removes Streamlit's default styling rather than adding to it.
  *
- * Selectors use data-testid where possible, the most stable hook Streamlit
- * exposes. Class-name selectors would break on every minor release.
+ * Selectors use data-testid. Class names change every minor release.
  */
 
 :root {
-  --line: #7CB342;          /* route green, darkened for legibility on white */
-  --line-bright: #9ACD32;   /* the line's actual uguisu, for the route only */
+  --line: #7CB342;          /* route green, darkened to read on white */
+  --line-bright: #9ACD32;   /* the line's actual uguisu, route only */
   --bg: #FFFFFF;
-  --panel: #F6F8F9;
-  --panel-2: #EDF1F3;
+  --panel: #F7F8F9;
   --edge: #DFE5EA;
-  --edge-strong: #C7D0D7;
+  --edge-strong: #B9C3CB;
   --text: #1A2027;
   --muted: #5B6B7A;
   --blue: #1565C0;
@@ -24,10 +22,9 @@
   --green: #2E7D32;
 }
 
-/* ---- strip Streamlit chrome ---------------------------------------- */
+/* ---- strip Streamlit chrome ----------------------------------------- */
 
 #MainMenu, footer, [data-testid="stStatusWidget"] { visibility: hidden; }
-
 [data-testid="stHeader"] { background: transparent; height: 0; }
 
 [data-testid="stMain"] .block-container {
@@ -36,35 +33,33 @@
   max-width: 1420px;
 }
 
-/* ---- typography ----------------------------------------------------- */
+/* ---- type ------------------------------------------------------------ */
 
 html, body, [data-testid="stAppViewContainer"] {
   background: var(--bg);
   color: var(--text);
-  font-family: "Inter", "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif;
-  -webkit-font-smoothing: antialiased;
+  font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
 }
 
-h1 { font-size: 1.5rem !important; font-weight: 650 !important;
-     letter-spacing: -0.01em; margin-bottom: 0.1rem !important; }
-h2 { font-size: 1.1rem  !important; font-weight: 620 !important; }
-h3 { font-size: 0.98rem !important; font-weight: 600 !important; }
+h1 { font-size: 1.45rem !important; font-weight: 600 !important;
+     margin-bottom: 0.1rem !important; }
+h2 { font-size: 1.08rem !important; font-weight: 600 !important; }
+h3 { font-size: 0.96rem !important; font-weight: 600 !important; }
 
+/* Section labels. Small and grey, but not letterspaced small-caps. */
 h4, h5 {
-  font-size: 0.74rem !important;
-  font-weight: 650 !important;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font-size: 0.82rem !important;
+  font-weight: 600 !important;
   color: var(--muted) !important;
 }
 
+/* Numbers line up in columns. */
 [data-testid="stMetricValue"], [data-testid="stMetricDelta"],
 .mono, code, pre, table td, table th {
   font-variant-numeric: tabular-nums;
-  font-feature-settings: "tnum" 1;
 }
 
-/* ---- sidebar -------------------------------------------------------- */
+/* ---- sidebar --------------------------------------------------------- */
 
 [data-testid="stSidebar"] {
   background: var(--panel);
@@ -72,25 +67,21 @@ h4, h5 {
 }
 
 [data-testid="stSidebar"] h1 {
-  font-size: 0.74rem !important;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
+  font-size: 0.86rem !important;
   color: var(--muted) !important;
 }
 
 [data-testid="stSidebar"] [data-testid="stExpander"] details {
   background: var(--bg);
   border: 1px solid var(--edge);
-  border-radius: 8px;
 }
 
-/* ---- dropdowns: selectable, not typeable ---------------------------- */
-/* Streamlit selectboxes accept free text, which invites typing a value that is
-   not in the list and then wondering why nothing happened. The lists here are
-   short and fixed, so the input is made click-only: pointer-events:none lets
-   the click fall through to the wrapper, which still opens the menu.
-   NOTE: this project targets data-testid only. Streamlit 1.61 removed the
-   data-baseweb attributes entirely, so selectors using them match nothing. */
+/* ---- dropdowns: selectable, not typeable ----------------------------- */
+/* Streamlit selectboxes accept free text, which invites typing a value that
+   is not in the list. These lists are short and fixed, so clicks only.
+   pointer-events:none lets the click reach the wrapper, which opens the menu.
+   Streamlit 1.61 removed the data-baseweb attributes, so only data-testid
+   selectors match anything. */
 
 [data-testid="stSelectbox"] input,
 [data-testid="stMultiSelect"] input {
@@ -102,7 +93,7 @@ h4, h5 {
 
 [data-testid="stSelectbox"] > div { cursor: pointer; }
 
-/* ---- tabs ----------------------------------------------------------- */
+/* ---- tabs ------------------------------------------------------------- */
 
 [data-testid="stTabs"] [role="tablist"] {
   gap: 0;
@@ -112,10 +103,10 @@ h4, h5 {
 }
 
 [data-testid="stTab"], [role="tab"] {
-  height: 40px;
-  padding: 0 18px;
+  height: 38px;
+  padding: 0 16px;
   color: var(--muted);
-  font-weight: 560;
+  font-weight: 500;
   font-size: 0.87rem;
   background: transparent;
 }
@@ -125,70 +116,79 @@ h4, h5 {
 [data-testid="stTab"][aria-selected="true"],
 [role="tab"][aria-selected="true"] {
   color: var(--text);
-  font-weight: 640;
-  box-shadow: inset 0 -2px 0 var(--green);
+  font-weight: 600;
+  border-bottom: 2px solid var(--green);
 }
 
-/* ---- train picker --------------------------------------------------- */
+/* ---- train picker ------------------------------------------------------ */
 
 .train-card {
   border: 1px solid var(--edge);
-  border-radius: 8px;
-  padding: 10px 10px 6px;
+  border-left: 3px solid transparent;
+  padding: 8px 8px 4px;
   background: var(--bg);
-  text-align: center;
 }
 
-.train-card.on { border-color: var(--green); background: #F4F9F4; }
+.train-card.on { border-left-color: var(--green); }
 .train-card svg { width: 100%; height: auto; display: block; }
 
-.train-name { font-size: 0.8rem; font-weight: 620; margin-top: 6px;
-              color: var(--text); }
-.train-meta { font-size: 0.68rem; color: var(--muted); }
+/* Streamlit's primary button is a filled block. The selected class is already
+   marked by the rule on its card, so both states stay quiet. */
+[data-testid="stSidebar"] [data-testid="stBaseButton-primary"],
+[data-testid="stSidebar"] [data-testid="stBaseButton-secondary"] {
+  border-radius: 0;
+  border: 1px solid var(--edge);
+  border-top: none;
+  background: var(--bg);
+  color: var(--text);
+  font-weight: 500;
+  font-size: 0.82rem;
+}
 
-/* ---- metrics -------------------------------------------------------- */
+[data-testid="stSidebar"] [data-testid="stBaseButton-primary"] {
+  border-left: 3px solid var(--green);
+  font-weight: 600;
+}
+
+/* ---- metrics ----------------------------------------------------------- */
+/* Rule above, nothing else. Boxes around every number turn a page of results
+   into a dashboard. */
 
 [data-testid="stMetric"] {
-  background: var(--bg);
-  border: 1px solid var(--edge);
-  border-radius: 8px;
-  padding: 12px 14px;
+  background: transparent;
+  border: none;
+  border-top: 1px solid var(--edge);
+  padding: 8px 12px 8px 0;
 }
 
 [data-testid="stMetricLabel"] p {
-  font-size: 0.68rem !important;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
+  font-size: 0.75rem !important;
   color: var(--muted) !important;
 }
 
 [data-testid="stMetricValue"] {
-  font-size: 1.4rem !important;
-  font-weight: 640 !important;
-  letter-spacing: -0.02em;
+  font-size: 1.32rem !important;
+  font-weight: 600 !important;
   color: var(--text) !important;
 }
 
 [data-testid="stMetricDelta"] { font-size: 0.72rem !important; }
 
-/* ---- panels, tables, alerts ----------------------------------------- */
+/* ---- panels, tables, alerts -------------------------------------------- */
 
 [data-testid="stExpander"] details {
   background: var(--bg);
   border: 1px solid var(--edge);
-  border-radius: 8px;
 }
 
-[data-testid="stTable"] table { font-size: 0.84rem; border-radius: 8px;
-                                overflow: hidden; }
+[data-testid="stTable"] table { font-size: 0.84rem; }
 
 [data-testid="stTable"] thead th {
   background: var(--panel) !important;
   color: var(--muted) !important;
-  font-size: 0.68rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  border-bottom: 1px solid var(--edge) !important;
+  font-size: 0.76rem;
+  font-weight: 600;
+  border-bottom: 1px solid var(--edge-strong) !important;
 }
 
 [data-testid="stTable"] tbody td {
@@ -196,71 +196,61 @@ h4, h5 {
   border-bottom: 1px solid var(--edge) !important;
 }
 
-[data-testid="stAlert"] { border-radius: 8px; }
+[data-testid="stAlert"] { border-radius: 0; }
 
 hr { border-color: var(--edge) !important; }
 
 /* Keep the Plotly toolbar visible rather than hover-only, so "reset zoom" is
    always findable. */
-.modebar { opacity: 0.75 !important; }
+.modebar { opacity: 0.7 !important; }
 .modebar:hover { opacity: 1 !important; }
 
-/* ---- departure board ------------------------------------------------ */
+/* ---- departure board ---------------------------------------------------- */
 
-.board {
-  background: var(--bg);
-  border: 1px solid var(--edge);
-  border-radius: 10px;
-  overflow: hidden;
-}
+.board { background: var(--bg); border: 1px solid var(--edge); }
 
 .board-row {
   display: grid;
   grid-template-columns: 78px 68px 1fr 96px 124px;
   align-items: center;
   gap: 10px;
-  padding: 11px 16px;
+  padding: 10px 14px;
   border-bottom: 1px solid var(--edge);
 }
 
 .board-row:last-child { border-bottom: none; }
-.board-row:nth-child(even) { background: #FCFDFD; }
 
 .board-row.head {
   background: var(--panel);
   color: var(--muted);
-  font-size: 0.66rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  padding: 9px 16px;
+  font-size: 0.72rem;
+  padding: 8px 14px;
 }
 
 .board-time {
-  font-size: 1.16rem;
-  font-weight: 660;
-  color: var(--text);
+  font-size: 1.12rem;
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
 
-.board-in { font-size: 0.88rem; font-weight: 620; color: var(--muted);
+.board-in { font-size: 0.88rem; font-weight: 600; color: var(--muted);
             font-variant-numeric: tabular-nums; }
 .board-in.soon { color: var(--amber); }
 
-.board-dest { font-size: 0.92rem; font-weight: 540; }
+.board-dest { font-size: 0.92rem; }
 .board-sub  { font-size: 0.73rem; color: var(--muted); }
 
+/* Crowding. Coloured text on a rule, not a rounded badge. */
 .board-load {
-  font-size: 0.7rem;
-  font-weight: 620;
-  padding: 3px 9px;
-  border-radius: 999px;
-  text-align: center;
-  border: 1px solid transparent;
+  font-size: 0.76rem;
+  font-weight: 600;
+  padding-left: 8px;
+  border-left: 3px solid currentColor;
 }
 
-.load-easy  { background: #EDF7ED; color: #2E7D32; border-color: #CFE8D0; }
-.load-mid   { background: #FDF4E3; color: #B26A00; border-color: #F0DFBC; }
-.load-heavy { background: #FDECEC; color: #C62828; border-color: #F5CFCF; }
+.load-easy  { color: var(--green); }
+.load-mid   { color: var(--amber); }
+.load-heavy { color: var(--red); }
 
-.jt-likely { font-size: 0.92rem; font-weight: 620; color: var(--text); }
+.jt-likely { font-size: 0.92rem; font-weight: 600; }
 .jt-phys   { font-size: 0.71rem; color: var(--muted); }

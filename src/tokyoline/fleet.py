@@ -1,27 +1,21 @@
-"""Phase 4: cross-class comparison.
+"""Cross-class comparison.
 
-The contrast the comparison exists to make legible: a commuter EMU and a
-high-speed set are optimised for opposite things. The E235 accelerates at 3.0
-km/h/s and tops out at 90; the E5 accelerates at 1.71 and tops out at 320. Neither
-is "better" -- they are solving different problems, and a scatter of acceleration
-against maximum speed shows the trade-off in one glance.
+A commuter EMU and a high-speed set solve different problems: the E235
+accelerates at 3.0 km/h/s to 90 km/h, the E5 at 1.71 to 320. Acceleration
+against maximum speed shows the trade-off in one plot.
 
-Three things this module is careful about:
+Three rules the module keeps:
 
-1. **Bounded quantities stay bounded.** N700S formation mass is published only as
-   "under 700 t". Power-to-weight computed from it is therefore a LOWER bound,
-   and it is returned tagged as one rather than silently becoming a point value.
-
-2. **Missing quantities stay missing.** Service deceleration is not published for
-   the E5 or N700S in the sources consulted. They are excluded from braking
-   comparisons rather than filled in with a peer value.
-
-3. **Speed-dependent braking is modelled where it is published.** The E7 publishes
-   a deceleration that falls from 2.69 km/h/s at low speed to 1.44 at 275 km/h,
-   because regenerative brake effort is power-limited just as tractive effort is.
-   Treating that as a constant would understate its stopping distance badly. For a
-   90 km/h commuter EMU the constant assumption is harmless; for high-speed stock
-   it is not, and that difference is itself a result worth showing.
+1. Bounded quantities stay bounded. N700S formation mass is published only as
+   "under 700 t", so power-to-weight from it is tagged as a lower bound rather
+   than becoming a point value.
+2. Missing quantities stay missing. Service deceleration is not published for
+   the E5 or N700S, so they are left out of braking comparisons instead of
+   filled in from a peer.
+3. Speed-dependent braking is modelled where it is published. The E7's rate
+   falls from 2.69 km/h/s to 1.44 at 275 km/h because regenerative effort is
+   power-limited. Treating it as constant badly understates the stopping
+   distance -- harmless for a 90 km/h EMU, not for high-speed stock.
 """
 
 from __future__ import annotations
@@ -228,25 +222,21 @@ def to_train_spec(m: FleetMember, *, passenger_mass_kg: float = 60.0,
 
 
 def simulatable(m: FleetMember) -> tuple[bool, str]:
-    """Whether a class can be run on this line's model, and why not if it cannot.
+    """Whether a class can run on this line's model, and why not if it cannot.
 
-    High-speed stock is excluded on purpose.
-
-    Speed-dependent braking is no longer the obstacle it once was:
-    SpeedDependentBrakeProfile implements it and satisfies the same interface
-    as the constant-rate profile, so simulate_segment accepts either. What
-    remains:
+    High-speed stock is excluded on purpose. Speed-dependent braking is no longer
+    the obstacle -- SpeedDependentBrakeProfile handles it behind the same
+    interface. What remains:
 
     * The Davis estimator was built for a blunt-nosed commuter EMU and does not
-      transfer to a streamlined 400 m trainset. fleet.json carries per-class
-      aerodynamic coefficients, but marks the high-speed ones as weakly
-      grounded, and tunnel aerodynamics are not modelled at all -- a
-      first-order omission on the Tokaido.
-    * Yamanote geometry is wrong for the question. Running a 400 m Shinkansen
-      between stops 1.15 km apart produces a number, but not a meaningful one.
+      transfer to a streamlined 400 m set. fleet.json carries per-class aerodynamic
+      coefficients but marks the high-speed ones weakly grounded, and tunnel
+      aerodynamics are not modelled at all, which is first-order on the Tokaido.
+    * Yamanote geometry is wrong for the question. A 400 m Shinkansen between stops
+      1.15 km apart produces a number, not a meaningful one.
 
-    The refusal is therefore about the resistance model and the choice of line,
-    not about the solver.
+    So the refusal is about the resistance model and the choice of line, not the
+    solver.
     """
     if m.category != "commuter EMU":
         return False, ("high-speed stock: the commuter Davis estimator does not "

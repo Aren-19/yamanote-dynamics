@@ -1,15 +1,14 @@
 """Structural invariants of a segment trajectory.
 
 The physics tests check what the model computes. These check that the object it
-hands back is coherent: phases in order, bookkeeping that adds up, no force
-applied where none should be. Every defect found in the solver so far has been
-in the control-phase machinery rather than in the equations -- an unlatched
-brake ramp-out, a phase entered at the wrong step boundary, cruise force
-recorded as zero -- and none of them would have broken an equation.
+returns is coherent -- phases in order, bookkeeping that adds up, no force
+where none should be applied. Every defect found in the solver so far has been
+in the control-phase machinery rather than the equations, and none of them
+would have broken an equation.
 
-They are cheap and they fail loudly, which is the point: a trajectory that
-cruises after braking, or whose phase times do not sum to its own run time, is
-wrong regardless of what the run time says.
+Cheap, and they fail loudly. A trajectory that cruises after braking, or whose
+phase times do not sum to its own run time, is wrong whatever the run time
+says.
 """
 
 from __future__ import annotations

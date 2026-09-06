@@ -1,30 +1,16 @@
 """Jerk-limited braking.
 
-A real brake application cannot step instantly to full deceleration -- that
-would be violently uncomfortable for standing passengers, and on a line where
-most riders stand, comfort is a hard operational constraint rather than a nicety.
-So a stop is three phases:
+Deceleration ramps in, holds, then ramps out. The ramp-out matters as much as
+the ramp-in: if deceleration does not reach zero as speed does, the train stops
+with a lurch.
 
-    ramp in at the jerk limit  ->  hold at maximum deceleration  ->  ramp out
+The jerk limit costs a_max/j seconds per stop whatever the initial speed --
+about 1.6 s for the E235, so 47 s over a circuit against a scheduled 3948 s. It
+also means the brake application point is not a v^2/2a lookup, so the solver has
+to intersect a backward brake curve with the forward run curve.
 
-The ramp-out matters as much as the ramp-in: deceleration must reach zero at the
-same moment speed does, otherwise the train stops with a lurch.
-
-Consequences that make this worth modelling from the start rather than bolting
-on later:
-
-* Stopping takes longer than the idealised instant application by exactly
-  ``a_max / j`` seconds in the trapezoidal case -- independent of initial speed.
-  For the E235 at 4.2 km/h/s with a 0.75 m/s^3 jerk limit that is about 1.6 s
-  per stop, so roughly 47 s over a 30-station circuit against a scheduled
-  3948 s. About 1.2 percent: real, measurable, and smaller than the recovery
-  margin it must not be confused with.
-* It changes the structure of the solver. The brake application point is no
-  longer a simple v^2/2a lookup, so it has to be found by intersecting a
-  backward-integrated brake curve with the forward run curve.
-
-Sign convention throughout: `a_max` and `jerk` are positive magnitudes.
-Deceleration is applied as a negative acceleration internally.
+a_max and jerk are positive magnitudes. Deceleration is applied as a negative
+acceleration internally.
 """
 
 from __future__ import annotations
@@ -44,17 +30,14 @@ DEFAULT_JERK_LIMIT = 0.75
 class BrakeProfile:
     """A jerk-limited deceleration profile to a stand.
 
-    Parameters
-    ----------
-    a_max : maximum deceleration magnitude, m/s^2.
-    jerk : maximum rate of change of deceleration, m/s^3.
+    `a_max` is the maximum deceleration magnitude in m/s^2, `jerk` its maximum
+    rate of change in m/s^3.
 
-    The published deceleration figure for Japanese stock (4.2 km/h/s for the
-    E235) is a NET rate -- what the train actually achieves. Running resistance
-    is therefore not added on top of it during braking, unlike during coasting
-    where resistance is the only retarding force. Treating the published figure
-    as net is the standard reading and is the conservative one here: it does not
-    credit the model with free deceleration.
+    The published figure for Japanese stock (4.2 km/h/s for the E235) is a net
+    rate, so running resistance is not added on top of it while braking -- unlike
+    coasting, where resistance is the only retarding force. That reading is
+    standard and conservative: it does not credit the model with free
+    deceleration.
     """
 
     a_max: float
@@ -217,38 +200,27 @@ class SpeedDependentBrakeProfile:
     """A jerk-limited stop whose deceleration limit varies with speed.
 
     High-speed stock does not brake at a constant rate. The E7 publishes
-    2.69 km/h/s below 70 km/h falling to 1.44 at 275 km/h, because regenerative
-    brake effort is power-limited in the same way tractive effort is, and
-    adhesion falls with speed. Treating that as constant understates the
-    stopping distance from line speed by about 30 percent.
+    2.69 km/h/s below 70 km/h falling to 1.44 at 275, because regenerative effort
+    is power-limited like tractive effort and adhesion falls with speed. Treating
+    it as constant understates the stop from line speed by about 30 percent.
 
-    For a 90 km/h commuter EMU the constant assumption is harmless, since the
-    whole speed range sits in the flat part of the curve. That is why the
-    Yamanote model uses BrakeProfile. This class exists so high-speed stock can
-    be simulated on the same solver.
+    For a 90 km/h EMU the whole range sits in the flat part of the curve, which is
+    why the Yamanote model uses BrakeProfile. This exists so high-speed stock runs
+    on the same solver, and the interface matches so simulate_segment takes either.
 
-    The interface deliberately matches BrakeProfile, so simulate_segment
-    accepts either without modification.
+    There is no closed form, so stops are integrated once at construction and
+    cached. distance_to_stop is called at every solver step, and integrating per
+    call would dominate the run time.
 
-    There is no closed form here, so stops are integrated numerically once at
-    construction and cached as a lookup table. distance_to_stop is called at
-    every solver step; integrating on each call would dominate the run time.
+    Given a flat curve this describes the same physics as BrakeProfile and agrees
+    with it to under a microsecond and a few tens of micrometres. Two details carry
+    most of that: the ramp-out is closed-form, because deceleration tends to zero
+    there and stepping into it cost 0.1 s on every stop; and the table is
+    interpolated against v-squared, since stopping distance is dominated by
+    v^2/2a.
 
-    ACCURACY. Validated against the closed-form BrakeProfile by giving this
-    class a flat curve: the two then describe identical physics, and agree to
-    under a microsecond and a few tens of micrometres on the raw integration.
-    Table lookup adds a little, leaving under a millimetre of platform error
-    through the segment solver.
-
-    Two details carry most of that accuracy. The ramp-out is closed-form rather
-    than stepped, because deceleration tends to zero there and the phase is
-    correspondingly sensitive to where it is entered -- stepping into it cost
-    0.1 s on every stop, independent of speed. And the lookup table is
-    interpolated against v-squared rather than v, since stopping distance is
-    dominated by the v^2/2a term.
-
-    Prefer :class:`BrakeProfile` anyway whenever the rate is constant: it is
-    exact by construction rather than by validation.
+    Prefer BrakeProfile when the rate is constant. It is exact by construction
+    rather than by validation.
     """
 
     #: Speeds sampled when building the lookup table. Stopping distance varies

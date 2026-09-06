@@ -1,17 +1,14 @@
 """Smoke tests for the Streamlit application.
 
-app.py is the largest file in the project and had no coverage at all, because
-a Streamlit script cannot simply be imported: running it *is* the test. The
-framework ships AppTest for this, which executes the script and exposes its
-widgets and output for inspection.
+A Streamlit script cannot be imported -- running it is the test -- so these use
+AppTest, which executes the script and exposes its widgets for inspection.
 
-These are deliberately few and broad. Each run executes the whole model, so a
-long suite here would dominate CI for little extra signal. What they establish
-is that the application starts, that its controls actually change what they
-claim to, and that no run raises.
+Deliberately few and broad. Each run executes the whole model, so a long suite
+here would dominate CI for little extra signal. They establish that the app
+starts, that its controls change what they claim to, and that nothing raises.
 
-Skipped when the visualisation extras are not installed, so the physics suite
-still runs on a bare `pip install -e ".[dev]"`.
+Skipped without the viz extras, so the physics suite still runs on a bare
+`pip install -e ".[dev]"`.
 """
 
 from __future__ import annotations

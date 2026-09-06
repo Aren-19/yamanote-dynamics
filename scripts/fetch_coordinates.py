@@ -1,9 +1,8 @@
-"""Fetch Yamanote station coordinates from OpenStreetMap via the Overpass API.
+"""Fetch Yamanote station coordinates from OpenStreetMap via Overpass.
 
-Queried programmatically rather than transcribed by hand or by a model: 30
-latitude/longitude pairs copied by eye is a step that silently introduces
-errors, and a wrong coordinate would show up as a kink in the line map that
-looks like a rendering bug rather than a data bug.
+Queried rather than transcribed: 30 latitude/longitude pairs copied by eye
+introduces errors silently, and a wrong coordinate shows up as a kink in the map
+that looks like a rendering bug rather than a data bug.
 
 Writes data/station_coordinates.csv. Run once; the output is committed.
 """

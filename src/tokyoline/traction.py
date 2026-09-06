@@ -1,19 +1,14 @@
-"""Tractive effort as a function of speed.
+"""Tractive effort against speed.
 
-Three constraints act simultaneously and the delivered effort is the minimum of
-all three:
+Three constraints act at once and the delivered effort is the smallest:
 
-1. Constant-effort region -- below base speed, effort is limited by motor
-   current and is flat at F_max.
-2. Constant-power region -- above base speed the traction system is power
-   limited, so F = P/v, a hyperbola.
-3. Adhesion ceiling -- independent of both, F cannot exceed
-   mu(v) * m_adhesive * g.
+1. Constant effort below base speed, limited by motor current.
+2. Constant power above it, so F = P/v.
+3. The adhesion ceiling, mu(v) * m_adhesive * g.
 
-Plotting all three together is one of the more informative single graphs in the
-project: for a commuter EMU with 6 of 11 cars powered the adhesion ceiling sits
-well clear and never binds, whereas for locomotive-hauled stock it is the
-binding constraint at starting.
+Plotted together they show why stock differs. With 6 of 11 cars powered the
+adhesion ceiling never binds on this class; for locomotive-hauled stock it is
+what limits starting.
 """
 
 from __future__ import annotations

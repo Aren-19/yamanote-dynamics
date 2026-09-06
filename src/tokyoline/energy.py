@@ -1,35 +1,25 @@
-"""Phase 5: traction energy accounting.
+"""Traction energy accounting.
 
-Traction energy is the integral of tractive effort against speed. The useful
-part is not the total but the breakdown: where does it end up?
+Traction energy is the integral of effort against speed. The breakdown is the
+useful part, not the total.
 
-Over one segment the train starts and ends at rest, so the kinetic energy term
-vanishes from the balance and everything the motors put in must leave through
-one of two doors:
+A segment starts and ends at rest, so the kinetic term drops out and
 
-    E_traction  =  E_resistance  +  E_brake_system  +  E_grade
+    E_traction = E_resistance + E_brake_system + E_grade
 
-The gravitational term is zero on level track, which covers every headline
-result here, and cancels exactly over a closed loop. It is included so the
-identity still holds on a graded segment: without it the residual reached 57
-percent on a 20 per-mille grade, which looked like a broken integrator but was
-a missing term.
+follows from the work-energy theorem. Both sides are computed independently, so
+the residual tests the integrator rather than restating an assumption; it is
+reported with every breakdown and should be rounding error. The grade term is
+zero on level track and cancels over a closed loop, but without it the residual
+reached 57 percent on a 20 per-mille grade.
 
-That identity is not an assumption -- it follows from the work-energy theorem
-given the start and end conditions -- so computing both sides independently and
-checking they agree is a genuine test of the integrator, not a tautology. The
-residual is reported with every breakdown, and it should be a rounding error.
+One trap: the published deceleration for Japanese stock is a net rate, already
+helped by running resistance. The brake system supplies m_eff*a - R(v), not
+m_eff*a. Crediting it with the whole would overstate what is available to
+regenerate.
 
-A subtlety this module has to be careful about. The published deceleration figure
-for Japanese stock is a NET rate: it is what the train actually achieves, with
-running resistance already helping. So during braking the brake system supplies
-less force than `m_eff * a` -- it supplies `m_eff * a - R(v)`. Attributing the
-whole of `m_eff * a` to the brakes would overstate the energy available for
-regeneration, and therefore overstate the recovery. The split is done properly
-here.
-
-Regeneration parameters are MODELLED. JR East does not publish a recovery
-fraction for the E235 on the Yamanote.
+Regeneration parameters are modelled. JR East publishes no recovery fraction
+for the E235 on this line.
 """
 
 from __future__ import annotations

@@ -1,29 +1,25 @@
-"""Phase 3: simulated minimum run time versus the published timetable.
+"""Simulated minimum run time against the published timetable.
 
-The naive version of this comparison is a single number -- "the simulation is
-N percent faster than the schedule" -- and it is close to meaningless, because
-the published timetable is not built from a theoretical minimum. According to
-MLIT's survey of operator practice (see data/operational_practice.json), a
-Japanese timetable is assembled in layers:
+"The simulation is N percent faster than the schedule" means almost nothing,
+because a Japanese timetable is not built up from a theoretical minimum. MLIT's
+survey of operator practice (data/operational_practice.json) describes layers:
 
-    theoretical minimum run time
-      -> run curve drawn BELOW the speed limit (2-5 km/h, industry consensus)
-      -> resulting run time ROUNDED UP  -> 基準運転時分 (standard run time)
-      -> margin ADDED on top           -> 余裕時分
-      -> plus station dwell            -> 停車時分
+    theoretical minimum
+      -> run curve drawn 2-5 km/h below the limit
+      -> rounded up          -> 基準運転時分, standard run time
+      -> margin added        -> 余裕時分
+      -> plus station dwell  -> 停車時分
       = published timetable
 
-So this module builds a ladder rather than a ratio. Each rung is a documented
-practice with a citable source, and the residual left at the top is the only
-part that has to be attributed to things the model cannot see.
+So this builds a ladder rather than a ratio. Each rung is documented practice
+with a source, and only the residual at the top has to be attributed to what
+the model cannot see.
 
-The honest caveat, stated once here and repeated in the README: dwell time is
-not published by JR East for the Yamanote. It enters as a scenario parameter,
-not a measurement. Because loop time = run + dwell + margin is one equation in
-two unknowns, dwell and margin are NOT separately identifiable from the loop
-total alone. This module therefore reports both a scenario ladder AND the full
-locus of (dwell, margin) pairs consistent with the published loop time, so the
-reader can see exactly how much the conclusion depends on the assumption.
+Dwell is not published for the Yamanote. It enters as a scenario parameter, and
+since loop time = run + dwell + margin is one equation in two unknowns, dwell
+and margin are not separately identifiable from the loop total. So the module
+reports the ladder and the full locus of (dwell, margin) pairs that fit the
+published time.
 """
 
 from __future__ import annotations

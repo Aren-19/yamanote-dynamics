@@ -1,12 +1,10 @@
 """Loading the data layer and assembling a default model.
 
-Distances come from JR East's published operating kilometrage (営業キロ), NOT
-from great-circle distance between station coordinates. That choice matters: the
-Yamanote is a curvy loop, so straight-line distance between consecutive stations
-understates track distance, and correcting it with a single global scale factor
-to hit 34.5 km smears the residual unevenly across segments. That residual would
-land directly on top of the systematic bias this project exists to measure.
-Published kilometrage removes the error source instead of correcting for it.
+Distances are JR East's published operating kilometrage (営業キロ), not
+great-circle distance between stations. The Yamanote curves, so straight-line
+distance understates track distance, and scaling it to hit 34.5 km spreads the
+residual unevenly across segments -- straight onto the bias this project exists
+to measure. Published kilometrage removes the error instead of correcting it.
 """
 
 from __future__ import annotations
@@ -69,18 +67,16 @@ def load_stations(path: Path | str | None = None) -> pd.DataFrame:
 
 
 def load_gradients(path: Path | str | None = None) -> dict[tuple[str, str], float]:
-    """Average per-segment gradient in per-mille, DERIVED from terrain elevation.
+    """Average per-segment gradient in per-mille, derived from terrain elevation.
 
-    NOT used by any headline result, and that is deliberate. The values come from
-    ground elevation at each station coordinate, and railways are graded
-    precisely so that track does NOT follow the ground: viaducts and cuttings
-    hold the rails level while the terrain moves. Ground elevation therefore
-    systematically OVERSTATES track gradient, and feeding it into the physics
-    would inject a new error while appearing to remove one.
+    Deliberately not used by any headline result. The values come from ground
+    elevation at each station, and railways are graded so that track does not
+    follow the ground -- viaducts and cuttings hold the rails level while the
+    terrain moves. Ground elevation therefore overstates track gradient, and
+    feeding it to the physics would add an error while looking like it removed one.
 
-    Its legitimate use is as a bound. Running the model with gradients this large
-    puts a ceiling on how much the flat-track assumption can be costing, which is
-    better than asserting the assumption is harmless. See scripts/gradient.py.
+    Its legitimate use is as a bound: running with gradients this large caps how
+    much the flat-track assumption can be costing. See scripts/gradient.py.
     """
     path = Path(path) if path else DATA_DIR / "gradients.csv"
     df = pd.read_csv(path, comment="#")

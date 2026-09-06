@@ -1,20 +1,15 @@
 """Entry guard shared by the scripts.
 
-Running `python scripts/whatever.py` with the system interpreter fails with a
-bare `ModuleNotFoundError: No module named 'tokyoline'`, which says nothing about
-the cause. The package and its dependencies are installed only into the
-project's virtual environment, so the fix is always the same and the error should
-say so.
+Running a script with the system interpreter fails with a bare
+`ModuleNotFoundError: No module named 'tokyoline'`, which says nothing about the
+cause. The package lives in the project virtual environment, so the fix is
+always the same and the error should say so.
 
-Two things happen here:
+Two things happen here: `src/` goes on sys.path so the scripts work from a
+checkout without pip-installing, and if the import still fails the error is
+turned into an instruction naming the exact command to use.
 
-1. `src/` is put on `sys.path`, so the scripts work from a checkout even when the
-   package has not been pip-installed.
-2. If the import still fails -- because a dependency such as pandas or scipy is
-   missing from whichever interpreter is running -- the failure is turned into an
-   instruction naming the exact command to use.
-
-Import and call `ensure()` as the first statement of every script.
+Call `ensure()` as the first statement of every script.
 """
 
 from __future__ import annotations

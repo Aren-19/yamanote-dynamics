@@ -1,15 +1,14 @@
 """How precise is the simulated run time, and what limits it?
 
-Two separate questions, and the answer to the second is not the integrator.
+Two questions, and the answer to the second is not the integrator.
 
-The first half is the step-size study: evidence that the fixed-step RK4 has
-converged, without which every run-time figure in the project is an unquantified
-claim. The second half is the input: every interstation distance comes from JR
-East's published operating kilometrage, stated to 0.1 km, so each station
-position carries up to 50 m of rounding.
+First the step-size study: evidence that the fixed-step RK4 has converged,
+without which every run time here is an unquantified claim. Then the input:
+interstation distances come from published operating kilometrage stated to
+0.1 km, so each station position carries up to 50 m of rounding.
 
-Reporting the first without the second would overstate the precision of the
-result by several orders of magnitude.
+Reporting the first without the second overstates the precision by several
+orders of magnitude.
 """
 
 from __future__ import annotations

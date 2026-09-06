@@ -1,13 +1,13 @@
 """Tests for journey time between stations.
 
-Every number on the departure board comes from this function, so an error here
-would be visible to a reader and invisible to the physics tests. It lived in
-app.py until now, which put the arithmetic behind the one file the test suite
-cannot import.
+Every number on the departure board comes from this function, so an error would
+be visible to a reader and invisible to the physics tests. It lived in app.py
+until recently, which put the arithmetic behind the one file the suite cannot
+import.
 
-The awkward part is the loop. Travelling inbound from station i covers segment
-i-1, not segment i, and both directions have to wrap. A sign error there gives
-plausible-looking times that are simply wrong.
+The loop is the awkward part. Travelling inbound from station i covers segment
+i-1, not i, and both directions wrap. A sign error gives plausible times that
+are simply wrong.
 """
 
 from __future__ import annotations

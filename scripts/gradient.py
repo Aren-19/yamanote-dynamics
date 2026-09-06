@@ -1,25 +1,21 @@
-"""Bounding study: how much can the flat-track assumption be costing?
+"""Bounding study: how much can the flat-track assumption cost?
 
-Every result in this project assumes level track. The justification has been
-that the Yamanote is near-flat and, being a closed loop, gravitational work
-cancels over a circuit anyway. That is an assertion. This script turns it into a
-number.
+Every result assumes level track, justified by the line being near-flat and the
+loop being closed, so gravitational work cancels. That is an assertion. This
+turns it into a number.
 
-The gradient profile used here is DERIVED from ground elevation and
-systematically overstates real track gradient, because railways are built to
-avoid following terrain. That makes it unsuitable as a model input but ideal as
-a bound: if run times barely move under gradients this exaggerated, the flat
-assumption is safe. If they move a lot, it is not.
+The gradient profile used here is derived from ground elevation and overstates
+real track gradient, because railways are built not to follow terrain. That
+makes it useless as an input and ideal as a bound: if run times barely move
+under gradients this exaggerated, the flat assumption is safe.
 
-Two effects are worth separating:
+Two effects separate. Gravitational work is conservative and cancels exactly
+over a closed loop. Time and energy do not, because the dynamics are
+asymmetric: climbing is power-limited so it costs more time than the matching
+descent returns, and on a descent the brakes fight gravity as well as momentum.
 
-  * Gravitational work is conservative, so it cancels EXACTLY over a closed loop.
-  * Time and energy do NOT cancel, because the dynamics are asymmetric. Climbing
-    is power-limited, so it costs more time than the matching descent saves. And
-    on a descent the brakes must fight gravity as well as momentum.
-
-So the expectation is that a circuit with gradients is slower and thirstier than
-a flat one, in BOTH directions of travel, even though the net climb is zero.
+So a graded circuit should come out slower and thirstier than a flat one in
+both directions, even with zero net climb.
 """
 
 from __future__ import annotations

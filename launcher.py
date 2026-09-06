@@ -1,22 +1,20 @@
-"""Launch the Yamanote model as an application.
+r"""Launch the Yamanote model as an application.
 
-Starts the Streamlit server on a free port, waits until it is actually serving,
-then opens it — in a native desktop window if `pywebview` is installed, otherwise
-in the default browser. Shuts the server down cleanly on exit.
+Starts the Streamlit server on a free port, waits until it is serving, then
+opens it -- in a native window if pywebview is installed, otherwise in the
+browser. Shuts the server down on exit.
 
-Why a launcher rather than a bundled executable: Streamlit resolves its own
-package metadata and static assets at runtime, so freezing it with PyInstaller
-needs `--collect-all` for streamlit, plotly, pyarrow and altair, produces a
-400-600 MB binary that takes 10-20 s to cold start, and tends to break on the
-next Streamlit release. This gets the same "double-click and it opens" behaviour
-for none of that fragility.
+A launcher rather than a bundled executable because Streamlit resolves its
+package metadata and static assets at runtime. Freezing it needs --collect-all
+for streamlit, plotly, pyarrow and altair, produces a 400-600 MB binary that
+takes 10-20 s to cold start, and breaks on the next Streamlit release. This
+gets the same double-click behaviour without any of that.
 
-Usage:
-    .venv\\Scripts\\python.exe launcher.py
-    .venv\\Scripts\\python.exe launcher.py --browser   # force the browser
-    .venv\\Scripts\\python.exe launcher.py --port 8600
+    .venv\Scripts\python.exe launcher.py
+    .venv\Scripts\python.exe launcher.py --browser
+    .venv\Scripts\python.exe launcher.py --port 8600
 
-On Windows, double-click run.bat instead.
+On Windows, double-click run.bat.
 """
 
 from __future__ import annotations

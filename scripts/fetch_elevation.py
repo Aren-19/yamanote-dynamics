@@ -1,26 +1,20 @@
 """Fetch station elevations and derive a per-segment gradient profile.
 
-The project has always modelled grade resistance and then evaluated it at zero,
-on the grounds that per-segment gradient data for the Yamanote is not published.
-That is true of *track* gradient. But station elevations can be sampled from a
-public terrain model, and combined with the published kilometrage that gives an
-average gradient per segment.
+The model has always carried grade resistance and evaluated it at zero, because
+per-segment gradient is not published. That is true of *track* gradient, but
+station elevations can be sampled from a public terrain model and combined with
+published kilometrage to give a segment average.
 
-What this is NOT:
+What this is not: it is ground elevation at the station coordinate, not track
+gradient. Much of the Yamanote runs on viaduct or in cutting, and several
+stations sit well above or below the surrounding ground. It is also an average
+over the segment, and real track has local grades steeper than that.
 
-  * It is not track gradient. It is ground elevation at the station coordinate.
-    Where the Yamanote runs on viaduct or in cutting -- which is much of it --
-    the rails are not at ground level, and several stations (Shibuya, Ueno) have
-    platforms well above or below the surrounding ground.
-  * It is an AVERAGE over the segment, not a maximum. Real track has local
-    grades steeper than the segment average.
-
-So this is a derived, indicative profile, not a survey. Its value is that it can
-be cross-checked: ja.wikipedia gives the line's maximum gradient as 34 permille
-between Tabata and Nishi-Nippori, so the derived profile should show that segment
-as by far the steepest, with an average somewhat below 34. If it does, the
-profile is picking up real terrain. If it does not, it is noise and should be
-discarded rather than used.
+So it is indicative, not a survey, and it can be cross-checked. ja.wikipedia
+gives the line maximum as 34 per-mille between Tabata and Nishi-Nippori, so the
+derived profile should show that segment as by far the steepest with an average
+somewhat below 34. If it does, the profile is picking up real terrain; if not,
+it is noise and should be discarded.
 
 Writes data/gradients.csv. Run once; the output is committed.
 """

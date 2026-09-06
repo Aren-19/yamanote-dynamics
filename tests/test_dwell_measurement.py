@@ -1,15 +1,15 @@
 """Tests for the dwell-measurement logic.
 
-This module cannot be exercised against JR East without an ODPT consumer key,
-so the grouping and censoring logic is tested against synthetic sample streams
-instead. That is the part worth testing anyway: the network client is thin, but
-deciding which observations constitute a usable measurement is subtle, and
-getting it wrong would produce confident numbers from partial evidence.
+Without an ODPT key this cannot run against JR East, so the grouping and
+censoring logic is tested against synthetic sample streams. That is the part
+worth testing anyway: the network client is thin, but deciding which
+observations make a usable measurement is subtle, and getting it wrong produces
+confident numbers from partial evidence.
 
-The rule under test: an episode counts only if it is bracketed by running
-observations on BOTH sides. One already in progress when sampling began, or
-still in progress when it ended, has no known duration and must be discarded
-rather than treated as a short dwell.
+The rule under test is that an episode counts only if running observations
+bracket it on both sides. One already under way when sampling began, or still
+under way when it ended, has no known duration and is discarded rather than
+counted as a short dwell.
 """
 
 from __future__ import annotations

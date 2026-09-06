@@ -1,16 +1,12 @@
-"""Streamlit application for the Yamanote dynamics model.
+"""Streamlit application for the Yamanote model.
 
-Two top-level views:
+Two views. LINE carries the departure board, the model against published
+comparison, the 2D map and the animated 3D track view. TECHNICAL carries
+segment profiles, traction curves, the energy breakdown, the coasting Pareto
+front, the validation ladder, parameter provenance and sources.
 
-  LINE       departure board, the model-versus-published comparison, the 2D
-             map and an animated 3D track view with synchronised instrument
-             panels.
-  TECHNICAL  segment profiles, traction curves, energy breakdown, the coasting
-             Pareto front, the validation ladder, parameter provenance and
-             sources.
-
-Launch with launcher.py (or run.bat), which starts the server and opens a
-native window. `streamlit run app.py` also works.
+Launch with launcher.py or run.bat, which starts the server and opens a window.
+`streamlit run app.py` also works.
 """
 
 from __future__ import annotations
@@ -90,6 +86,56 @@ INK = "#1A2027"
 MUTED = "#5B6B7A"
 GRID = "#EAEEF1"
 AXIS = "#D7DEE3"
+
+M_PER_DEG_LAT = 111_320.0
+
+# The train drawn at true scale is 214 m on a 34.5 km loop, about two pixels.
+# These are the dimensions it is drawn at instead, in metres: long enough to
+# read as a train, wide and tall enough to catch the light.
+TRAIN_VIS_M = 1800.0
+_HALF, _W, _H, _NOSE = TRAIN_VIS_M / 2, 200.0, 26.0, 470.0
+_SHOULDER = _HALF - _NOSE
+
+#: A box body with a tapered nose. Columns are (along track, across, up),
+#: measured from the centre of the train.
+TRAIN_BODY = np.array([
+    (-_HALF, -_W, 0.0), (-_HALF, _W, 0.0),         # 0, 1  tail floor
+    (-_HALF, _W, _H), (-_HALF, -_W, _H),           # 2, 3  tail roof
+    (_SHOULDER, -_W, 0.0), (_SHOULDER, _W, 0.0),   # 4, 5  shoulder floor
+    (_SHOULDER, _W, _H), (_SHOULDER, -_W, _H),     # 6, 7  shoulder roof
+    (_HALF, -_W * 0.35, 0.0), (_HALF, _W * 0.35, 0.0),      # 8, 9   nose floor
+    (_HALF, _W * 0.35, _H * 0.62), (_HALF, -_W * 0.35, _H * 0.62),  # 10, 11
+])
+
+#: Twenty triangles over those vertices: tail, four body faces, then the nose.
+TRAIN_I = [0, 0, 0, 0, 1, 1, 0, 0, 3, 3, 4, 4, 5, 5, 4, 4, 7, 7, 8, 8]
+TRAIN_J = [1, 2, 4, 7, 5, 6, 1, 5, 7, 6, 8, 11, 9, 10, 5, 9, 11, 10, 9, 10]
+TRAIN_K = [2, 3, 7, 3, 6, 2, 5, 4, 6, 2, 11, 7, 10, 6, 9, 8, 10, 6, 10, 11]
+
+#: Pale where slow, deep green where fast. One hue reads as a quantity; a
+#: rainbow reads as decoration.
+SPEED_SCALE = [[0.0, "#DDE9CB"], [0.5, "#9ACD32"], [1.0, "#33691E"]]
+
+
+def train_mesh(geom, d0: float) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Train body on the track at `d0`, nose pointing along travel.
+
+    Built in metres from the train centre, turned onto the local heading, then
+    converted back to lon/lat.
+    """
+    lat0, lon0 = geom.position_at(d0)
+    lat1, lon1 = geom.position_at(d0 + 5.0)
+
+    m_per_deg_lon = M_PER_DEG_LAT * np.cos(np.radians(lat0))
+    fx = (lon1 - lon0) * m_per_deg_lon
+    fy = (lat1 - lat0) * M_PER_DEG_LAT
+    norm = np.hypot(fx, fy) or 1.0
+    fx, fy = fx / norm, fy / norm
+
+    along, across, up = TRAIN_BODY[:, 0], TRAIN_BODY[:, 1], TRAIN_BODY[:, 2]
+    east = along * fx - across * fy
+    north = along * fy + across * fx
+    return (lon0 + east / m_per_deg_lon, lat0 + north / M_PER_DEG_LAT, up)
 
 #: Chart toolbar. Shown always rather than on hover, so "reset axes" is
 #: findable, and double-click resets the view on every chart including 3D.
@@ -1047,20 +1093,6 @@ with view_net:
     track_lon = np.array([p[1] for p in track_pos])
     track_v = np.interp(track_d, c_dist, c_speed)
 
-    # The train is 214 m against a 34.5 km loop — about two pixels at this
-    # zoom. Drawn 4x long so it reads as a train; the caption says so.
-    CAR_GAP_M = 200.0
-    N_CARS = 5
-
-    def train_xyz(d0: float) -> tuple[list, list, list]:
-        xs, ys, zs_ = [], [], []
-        for k in range(N_CARS):
-            p = geom.position_at(d0 - k * CAR_GAP_M)
-            xs.append(p[1])
-            ys.append(p[0])
-            zs_.append(0.0)
-        return xs, ys, zs_
-
     fig3 = make_subplots(
         rows=5, cols=2, column_widths=[0.60, 0.40],
         horizontal_spacing=0.07, vertical_spacing=0.055,
@@ -1082,9 +1114,6 @@ with view_net:
     )
 
     # --- 3D scene -----------------------------------------------------
-    # Single-hue ramp: pale where the train is slow, deep green where it is
-    # fast. A rainbow scale reads as decoration; one hue reads as a quantity.
-    SPEED_SCALE = [[0.0, "#DDE9CB"], [0.5, "#9ACD32"], [1.0, "#33691E"]]
     fig3.add_trace(go.Scatter3d(
         x=track_lon, y=track_lat, z=np.zeros_like(track_lat), mode="lines",
         line=dict(color=track_v, colorscale=SPEED_SCALE, width=11,
@@ -1113,12 +1142,12 @@ with view_net:
         hovertext=hover, hoverinfo="text", showlegend=False,
     ), row=1, col=1)
 
-    tx, ty, tz = train_xyz(f_d[0])
-    fig3.add_trace(go.Scatter3d(
-        x=tx, y=ty, z=tz, mode="lines+markers",
-        line=dict(color="#1565C0", width=10),
-        marker=dict(size=6, color=["#0D47A1"] + ["#1565C0"] * (N_CARS - 1),
-                    symbol="square"),
+    tx, ty, tz = train_mesh(geom, f_d[0])
+    fig3.add_trace(go.Mesh3d(
+        x=tx, y=ty, z=tz, i=TRAIN_I, j=TRAIN_J, k=TRAIN_K,
+        color="#1565C0", flatshading=True, opacity=1.0,
+        lighting=dict(ambient=0.62, diffuse=0.85, specular=0.12),
+        lightposition=dict(x=1000, y=-1000, z=4000),
         hoverinfo="skip", showlegend=False,
     ), row=1, col=1)
     TRAIN_TRACE = 3
@@ -1172,12 +1201,14 @@ with view_net:
     fig3.update_xaxes(title_text="seconds into the circuit", row=5, col=2,
                       title_font=dict(size=9))
 
+    mesh_frames = [train_mesh(geom, d) for d in f_d]
     fig3.frames = [
         go.Frame(
             name=str(i),
             data=(
-                [go.Scatter3d(x=train_xyz(f_d[i])[0], y=train_xyz(f_d[i])[1],
-                              z=train_xyz(f_d[i])[2])]
+                [go.Mesh3d(x=mesh_frames[i][0], y=mesh_frames[i][1],
+                           z=mesh_frames[i][2],
+                           i=TRAIN_I, j=TRAIN_J, k=TRAIN_K)]
                 + [go.Scatter(x=[f_t[i]], y=[s[i]])
                    for s in (f_v, f_a, f_f, f_p, f_r)]
             ),
@@ -1197,7 +1228,7 @@ with view_net:
             xaxis=_ax3, yaxis=_ax3,
             zaxis=dict(**{**_ax3, "range": [0, 260]}),
             aspectmode="manual", aspectratio=dict(x=1, y=ASPECT, z=0.28),
-            camera=dict(eye=dict(x=1.25, y=-1.25, z=1.05),
+            camera=dict(eye=dict(x=0.92, y=-0.92, z=0.70),
                         up=dict(x=0, y=0, z=1)),
             bgcolor="rgba(0,0,0,0)",
         ),
@@ -1228,8 +1259,8 @@ with view_net:
         "service brake rate, one-hour power rating. Tractive effort and running "
         "resistance have no published curve for this class and show the model "
         f"alone. The train is drawn "
-        f"{N_CARS * CAR_GAP_M / spec.train_length_m:.0f}× its real length for "
-        "visibility."
+        f"{TRAIN_VIS_M / spec.train_length_m:.0f}× its real length; at true "
+        "scale it would be two pixels."
     )
 
     st.divider()
@@ -1372,28 +1403,34 @@ with view_net:
 
             fig.add_trace(go.Scatter3d(
                 x=tn, y=tl, z=zs, mode="lines",
-                line=dict(color=zs, colorscale="Turbo", width=8,
+                line=dict(color=zs, colorscale=SPEED_SCALE, width=8,
                           colorbar=dict(title="km/h", x=1.02, len=0.7)),
                 name="Speed", hoverinfo="skip",
             ))
             fig.add_trace(go.Scatter3d(
-                x=geom.lon, y=geom.lat, z=np.zeros_like(geom.lat), mode="markers+text",
-                marker=dict(size=sizes / 4 + 3, color=b, colorscale="Blues",
-                            line=dict(color="#25476a", width=1)),
+                x=geom.lon, y=geom.lat, z=np.zeros_like(geom.lat),
+                mode="markers+text",
+                marker=dict(size=4, color="#FFFFFF",
+                            line=dict(color=INK, width=1.5)),
                 text=geom.names, textposition="top center",
-                textfont=dict(size=8, color="#33475b"),
+                textfont=dict(size=8, color=MUTED),
                 hovertext=hover, hoverinfo="text", name="Stations",
             ))
-            fig.add_trace(go.Scatter3d(
-                x=[train_lon[0]], y=[train_lat[0]], z=[frame_v[0]], mode="markers",
-                marker=dict(size=9, color="#d90429",
-                            line=dict(color="white", width=1)),
-                name="Train",
+            mx, my, _ = train_mesh(geom, frame_d[0])
+            fig.add_trace(go.Mesh3d(
+                x=mx, y=my, z=np.full(len(mx), frame_v[0]),
+                i=TRAIN_I, j=TRAIN_J, k=TRAIN_K,
+                color="#1565C0", flatshading=True,
+                lighting=dict(ambient=0.62, diffuse=0.85, specular=0.12),
+                hoverinfo="skip", name="Train",
             ))
             fig.frames = [
                 go.Frame(
-                    data=[go.Scatter3d(x=[train_lon[i]], y=[train_lat[i]],
-                                       z=[frame_v[i]])],
+                    data=[go.Mesh3d(
+                        x=train_mesh(geom, frame_d[i])[0],
+                        y=train_mesh(geom, frame_d[i])[1],
+                        z=np.full(len(TRAIN_BODY), frame_v[i]),
+                        i=TRAIN_I, j=TRAIN_J, k=TRAIN_K)],
                     traces=[len(fig.data) - 1], name=str(i),
                 )
                 for i in range(n_frames)

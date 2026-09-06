@@ -4,22 +4,18 @@ A segment starts and ends at rest, so the kinetic term drops out and
 
     E_traction = E_resistance + E_brake_system + E_grade
 
-must hold exactly. Both sides are computed independently, which makes this a
-test of the accounting rather than a restatement of it.
+must hold. Both sides are computed independently, so this tests the accounting
+rather than restating it.
 
-The identity was previously written without the gravitational term and tested
-only on level track, where that term is zero. On a gradient it failed by up to
-104 percent. Three separate omissions had to be fixed:
+The identity was written without the gravitational term and tested only on
+level track, where that term is zero. On a gradient it failed by up to 104
+percent, from three separate omissions: gravitational work was not counted at
+all; the brake system was credited with the whole commanded deceleration when
+uphill gravity supplies part of it and downhill opposes it; and holding speed
+on a descent needs braking, which the cruise phase recorded as no force.
 
-  * gravitational work was not counted at all;
-  * the brake system was credited with the whole commanded deceleration, when
-    uphill gravity supplies part of it and downhill opposes it;
-  * holding a constant speed downhill requires braking, which the cruise phase
-    recorded as no force at all, so the work gravity did was absorbed by
-    nothing.
-
-The sign of the failure flipping between climb and descent is what identified
-the second and third. These tests exist so that cannot happen again quietly.
+The failure changing sign between climb and descent is what found the last two.
+These tests exist so it cannot happen again quietly.
 """
 
 from __future__ import annotations
