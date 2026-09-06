@@ -19,6 +19,7 @@ data/dwell_samples.json
 .idea/
 .DS_Store
 Thumbs.db
+
 # Test and coverage output
 .coverage
 .coverage.*
