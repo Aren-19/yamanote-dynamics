@@ -1,6 +1,6 @@
 # Yamanote Line Train Dynamics Model
 
-[![tests](https://github.com/VolitantTrack70/yamanote-dynamics/actions/workflows/tests.yml/badge.svg)](https://github.com/VolitantTrack70/yamanote-dynamics/actions/workflows/tests.yml)
+[![tests](https://github.com/VolitantTrack70/yamanote-dynamics-0.2/actions/workflows/tests.yml/badge.svg)](https://github.com/VolitantTrack70/yamanote-dynamics-0.2/actions/workflows/tests.yml)
 
 A first-principles physics simulation of the JR East Yamanote Line, compared
 against the published timetable.
