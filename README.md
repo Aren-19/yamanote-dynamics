@@ -94,13 +94,12 @@ Analysis scripts must use the virtual environment's interpreter:
 .venv\Scripts\python.exe -m pytest
 ```
 
-91% coverage of the package. Most tests assert identities and bounds
-rather than pinning numbers — energy conservation, exact platform arrival,
-monotonicity of resistance and run time, the jerk penalty being independent of
-initial speed, the adhesion ceiling never binding for this class. A separate
-group does pin the figures this README states publicly, so they cannot drift
-out of date unnoticed, and another enforces the data layer's provenance
-tagging.
+91% coverage. Most tests assert identities and bounds rather than pinning
+numbers: energy conservation, exact platform arrival, monotonicity of
+resistance and run time, the jerk penalty being independent of initial speed,
+the adhesion ceiling never binding for this class. A separate group pins the
+figures this README states, so they cannot drift out of date unnoticed, and
+another enforces the data layer's provenance tags.
 
 CI runs lint, the suite on Python 3.10 and 3.12 with an 80% coverage floor,
 then the analysis scripts, which exercise more of the code than the unit tests
@@ -135,60 +134,56 @@ solver overshoots.
 | Energy balance residual | 9.8 × 10⁻⁴ worst case, first order in dt |
 | Distance rounding | ±0.8 s (1σ) on the circuit, ±2–3 s per segment |
 
-The energy balance is a real test, not a restatement: a segment starts and
-ends at rest, so `E_traction = E_resistance + E_brake + E_grade` must hold,
-and both sides are computed independently. It initially failed at 7.3% and
-exposed a genuine bug. The gravitational term was added later, after the
-identity was found to fail by up to 104% on a graded segment while holding
-exactly on level track — the regime everything had been tested in.
+The energy balance is a real test. Both sides are computed independently, so
+it can fail — and did, at 7.3%, on a genuine bug. The gravitational term was
+added after the identity turned out to fail by up to 104% on a graded segment
+while holding exactly on level track, the only regime it had been tested in.
 
-The integrator is not what limits precision. Published operating kilometrage
+Precision is limited by the input, not the integrator. Published kilometrage
 (営業キロ) is stated to 0.1 km, so each station position carries up to 50 m of
-rounding. Sampling positions across that interval moves the circuit minimum by
-0.83 s (1σ), roughly 17,000× the step-size error at dt = 0.1 s. The circuit
-total survives because the loop is closed — each position appears in two
-segments with opposite sign — but a single segment has no cancelling partner,
-where 50 m is worth 2–3 s. That is a second independent reason, alongside the
-minute-rounded timetable, that no per-segment claim is supported.
+rounding. Sampling across that interval moves the circuit minimum by 0.83 s
+(1σ), about 17,000× the step-size error at dt = 0.1 s. The closed loop absorbs
+it, because each position appears in two segments with opposite sign. A single
+segment has no cancelling partner, and 50 m is worth 2–3 s there — a second
+reason, alongside the minute-rounded timetable, that no per-segment claim is
+supported.
 
 ## Other results
 
-**Energy.** 92% of traction work is dissipated in braking — a consequence of 30
-stops in 34.5 km. Net consumption is 1.82 kWh per car-km, which sits *below*
-the published 2–4 heavy-metro band. That exposes a conflict: matching JR East's
-published 回生率 of 59.0% needs a higher regeneration receptivity (~0.76), while
-the energy band needs a lower one (0.3–0.5). The two published anchors disagree
-about the same unpublished parameter. The conflict is recorded, not resolved.
+**Energy.** 92% of traction work is dissipated in braking, which is what 30
+stops in 34.5 km costs. Net consumption is 1.82 kWh per car-km, below the
+published 2–4 heavy-metro band. That exposes a conflict: matching JR East's
+回生率 of 59.0% needs a regeneration receptivity around 0.76, while the energy
+band needs 0.3–0.5. Two published anchors disagree about the same unpublished
+parameter. Recorded, not resolved.
 
-**Coasting.** The energy-minimal profile is accelerate–cruise–coast–brake, and
-with the shape fixed the strategy is one parameter. Coasting beats simply
-cruising slower by 3–4% at equal run time. Allowing 10% more run time cuts
-energy by about a third — the shape of the Pareto front matters more than the
-strategy along it.
+**Coasting.** The energy-minimal profile is accelerate–cruise–coast–brake, so
+with the shape fixed the strategy is one parameter. At equal run time coasting
+beats simply cruising slower by 3–4%. Allowing 10% more run time cuts energy by
+about a third: the shape of the Pareto front matters more than where you sit on
+it.
 
 **Gradient.** Under a terrain-derived profile known to overstate real track
 gradient, circuit run time moves 0.46% while the worst single segment shifts
 7.7 s. The flat-track assumption is safe for the circuit-level result and
 unsafe for any per-segment claim.
 
-**Speed restrictions.** The model runs at the 90 km/h line speed throughout;
-real curve, turnout and signal limits are not published. Run time falls
-strictly with the speed limit, so a uniform cap bounds any set of per-segment
-restrictions above it. A severe line-wide 75 km/h cap costs 85 s, 14% of the
-residual. Restrictions could account for the *whole* 598 s only under a
-line-wide 51 km/h cap — 43% below the published line speed. At the circuit
-level a uniform restriction is observationally equivalent to recovery margin;
-what separates them is the published line speed, not the loop time. Eleven of
-30 segments never reach 90 km/h in any case, the shortest peaking at 67 km/h,
-so a restriction there is free.
+**Speed restrictions.** The model runs the whole line at 90 km/h; real curve,
+turnout and signal limits are not published. Run time falls strictly with the
+speed limit, so a uniform cap bounds any set of per-segment restrictions above
+it. A severe line-wide 75 km/h cap costs 85 s, 14% of the residual, and
+absorbing the whole 598 s would take 51 km/h — 43% below the published line
+speed. At circuit level a uniform restriction is indistinguishable from
+recovery margin; the published line speed is what separates them, not the loop
+time. Eleven of 30 segments never reach 90 km/h anyway, the shortest peaking at
+67, so a restriction there is free.
 
 **Passenger load.** Every headline figure assumes 100% of published capacity,
-while the published loop time it is compared against is the mean of all
-services, most of them far lighter. Sweeping empty to the MLIT-measured 125%
-peak moves the standard run time by 105 s and implied dwell by 3.7 s, from
-48.0 s at the assumed load to 50.2 s empty. The bias therefore runs *against*
-the result: a realistic daily mean load would push implied dwell up, toward the
-51.9 s zero-margin bound, not down.
+while the loop time it is compared against averages all services, most of them
+far lighter. Empty to the MLIT-measured 125% peak moves the standard run time
+by 105 s and implied dwell by 3.7 s, from 48.0 s to 50.2 s. So the bias runs
+against the result: a realistic daily mean load pushes implied dwell up, toward
+the 51.9 s zero-margin bound, not down.
 
 ## Data sources
 
