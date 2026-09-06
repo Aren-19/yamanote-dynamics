@@ -745,7 +745,7 @@ with view_board:
     b2.metric("Headway", f"{headway_min:.1f} min", "modelled",
               delta_color="off")
     b3.metric("Circuit, modelled", fmt_mmss(circuit_s),
-              f"published {fmt_mmss(PUBLISHED_LOOP_S)}", delta_color="off")
+              f"published mean {fmt_mmss(PUBLISHED_LOOP_S)}", delta_color="off")
     b4.metric("Crowding", f"{crowding_pct}%",
               f"{scen['crowding_source']}, {extra_t:+.0f} t", delta_color="off")
     b5.metric("Rail", condition.name, cond_key, delta_color="off")
@@ -2100,8 +2100,11 @@ with view_analysis:
             st.warning(
                 f"{100*d['residual_margin_fraction']:.0f}% is far above documented "
                 "practice. Either dwell is higher than assumed, or the model's "
-                "minimum is too fast — most plausibly because signal and ATC "
-                "restrictions are not modelled."
+                "minimum is too fast. Unmodelled restrictions are the usual "
+                "suspect but are bounded: a severe line-wide 75 km/h cap "
+                "accounts for only 14% of the residual, and absorbing all of "
+                "it would take a 51 km/h cap, 43% below the published line "
+                "speed."
             )
         elif d["residual_margin_fraction"] < 0:
             st.error("Negative residual: no room for any margin, which contradicts "
@@ -2109,6 +2112,15 @@ with view_analysis:
         else:
             st.success(f"{100*d['residual_margin_fraction']:.1f}% is consistent with "
                        "documented recovery-margin practice.")
+
+        st.caption(
+            "The published circuit time is the mean of all services across the "
+            "day; the crowding slider sets a single load. Heavier trains are "
+            "slower, so a peak-crowding setting is not a like-for-like "
+            "comparison. Empty to the measured 125% peak moves the standard "
+            "run time by 105 s and implied dwell by 3.7 s, and a realistic "
+            "daily mean load raises implied dwell rather than lowering it."
+        )
 
         st.divider()
         st.subheader("The identifiability problem")
