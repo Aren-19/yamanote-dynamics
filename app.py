@@ -117,6 +117,18 @@ TRAIN_K = [2, 3, 7, 3, 6, 2, 5, 4, 6, 2, 11, 7, 10, 6, 9, 8, 10, 6, 10, 11]
 SPEED_SCALE = [[0.0, "#DDE9CB"], [0.5, "#9ACD32"], [1.0, "#33691E"]]
 
 
+def play_pause(frame_ms: int) -> list[dict]:
+    """Animation controls for a Plotly figure."""
+    return [
+        dict(label="Run", method="animate",
+             args=[None, dict(frame=dict(duration=frame_ms, redraw=True),
+                              fromcurrent=True, mode="immediate")]),
+        dict(label="Pause", method="animate",
+             args=[[None], dict(frame=dict(duration=0, redraw=False),
+                                mode="immediate")]),
+    ]
+
+
 def train_mesh(geom, d0: float) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Train body on the track at `d0`, nose pointing along travel.
 
@@ -1235,14 +1247,7 @@ with view_net:
             type="buttons", showactive=False, x=0.0, y=0.0, xanchor="left",
             bgcolor="#FFFFFF", bordercolor="#D7DEE3",
             font=dict(color=INK, size=11),
-            buttons=[
-                dict(label="Run", method="animate",
-                     args=[None, dict(frame=dict(duration=70, redraw=True),
-                                      fromcurrent=True, mode="immediate")]),
-                dict(label="Pause", method="animate",
-                     args=[[None], dict(frame=dict(duration=0, redraw=False),
-                                        mode="immediate")]),
-            ],
+            buttons=play_pause(70),
         )],
     )
     for ann in fig3.layout.annotations:
@@ -1453,14 +1458,7 @@ with view_net:
         fig.update_layout(
             updatemenus=[dict(
                 type="buttons", showactive=False, x=0.02, y=0.04, xanchor="left",
-                buttons=[
-                    dict(label="Play", method="animate",
-                         args=[None, dict(frame=dict(duration=90, redraw=True),
-                                          fromcurrent=True, mode="immediate")]),
-                    dict(label="Pause", method="animate",
-                         args=[[None], dict(frame=dict(duration=0, redraw=False),
-                                            mode="immediate")]),
-                ],
+                buttons=play_pause(90),
             )],
             sliders=[dict(
                 active=0, x=0.15, len=0.8, y=0.02,
