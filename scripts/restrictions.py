@@ -26,9 +26,9 @@ def circuit(cap_kmh: float) -> float:
 
 baseline = circuit(LINE_SPEED_KMH)
 
-print("=" * 78)
-print("WHERE A RESTRICTION COULD BIND AT ALL")
-print("=" * 78)
+print()
+print("Where a restriction could bind at all")
+print("-" * 37)
 print("  A speed limit costs nothing where the train would not have reached it.")
 print("  Short segments never do: the train is still accelerating when it has to")
 print("  start braking, so its peak is set by the distance, not by the limit.")
@@ -54,9 +54,9 @@ print(f"  {never_reach} of {len(segments)} segments never reach line speed unres
 print("  On those, any restriction at or above the natural peak is free.")
 
 print()
-print("=" * 78)
-print("COST OF A UNIFORM CAP")
-print("=" * 78)
+print()
+print("Cost of a uniform cap")
+print("-" * 21)
 print("  An upper bound on any set of per-segment restrictions no lower than the")
 print("  cap, since run time falls strictly with the speed limit.")
 print()
@@ -70,9 +70,9 @@ for cap in (85.0, 80.0, 75.0, 70.0, 65.0, 60.0, 55.0, 50.0):
           f"{delta / RESIDUAL_MARGIN_S:27.0%}")
 
 print()
-print("=" * 78)
-print("INVERTED  --  what would restrictions have to be to explain the residual?")
-print("=" * 78)
+print()
+print("Inverted: what would restrictions have to be to explain the residual?")
+print("-" * 69)
 
 lo, hi = 20.0, LINE_SPEED_KMH
 for _ in range(24):
@@ -116,9 +116,9 @@ print(f"  A line-wide 75 km/h cap, already severe, accounts for "
 print("  That is the realistic order of the effect.")
 
 print()
-print("=" * 78)
-print("VERDICT")
-print("=" * 78)
+print()
+print("Verdict")
+print("-" * 7)
 print("  Restrictions belong in the residual, not outside it. The residual was")
 print("  already defined as everything left over -- added margin, driver")
 print("  conservatism, signal restrictions -- so this does not move the")

@@ -51,9 +51,9 @@ print("  in the smooth regions. Phase-switch handling limits the observed order.
 
 
 print()
-print("=" * 78)
-print("DISTANCE QUANTIZATION  --  the uncertainty the integrator cannot fix")
-print("=" * 78)
+print()
+print("Distance quantization: what the integrator cannot fix")
+print("-" * 53)
 print("  Published kilometrage is given to 0.1 km, so each station position is")
 print("  known to within 50 m and the segment distances inherit that. Sampling")
 print("  each position uniformly across its rounding interval gives the spread")

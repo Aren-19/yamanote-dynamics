@@ -13,9 +13,9 @@ traction, brake = build_model(load_factor=1.0)
 spec = traction.spec
 davis = traction.davis
 
-print("=" * 72)
-print("ROLLING STOCK")
-print("=" * 72)
+print()
+print("Rolling stock")
+print("-" * 13)
 print(f"  {spec.name}")
 print(f"  formation           {spec.n_motor_cars}M{spec.n_cars - spec.n_motor_cars}T")
 print(f"  tare mass           {spec.tare_mass_kg / 1000:.1f} t")
@@ -26,9 +26,9 @@ print(f"  frontal area        {spec.frontal_area_m2:.2f} m^2")
 print(f"  train length        {spec.train_length_m:.1f} m")
 
 print()
-print("=" * 72)
-print("RUNNING RESISTANCE  (MODELLED -- no published E235 coefficients)")
-print("=" * 72)
+print()
+print("Running resistance, modelled: no published E235 coefficients")
+print("-" * 60)
 print(f"  A = {davis.A:9.1f} N        B = {davis.B:7.2f} N/(m/s)"
       f"        C = {davis.C:6.2f} N/(m/s)^2")
 m = spec.mass_kg(1.0)
@@ -39,9 +39,9 @@ for v_kmh in (0, 30, 60, 90):
 print("  expected range for a commuter EMU: ~10-15 N/t at rest, ~25-35 N/t at 90 km/h")
 
 print()
-print("=" * 72)
-print("TRACTIVE EFFORT")
-print("=" * 72)
+print()
+print("Tractive effort")
+print("-" * 15)
 print(f"  max effort          {traction.max_effort_n / 1000:.1f} kN")
 print(f"  power (1-hour)      {traction.power_w / 1000:.0f} kW")
 print(f"  base speed          {kmh(traction.base_speed_ms):.1f} km/h")
@@ -56,9 +56,9 @@ for v_kmh in (0, 15, 30, 45, 60, 75, 90):
           f"          {'ADHESION' if traction.adhesion_binds(v) else 'no'}")
 
 print()
-print("=" * 72)
-print("JERK-LIMITED BRAKING")
-print("=" * 72)
+print()
+print("Jerk-limited braking")
+print("-" * 20)
 print(f"  a_max = {brake.a_max:.3f} m/s^2 ({brake.a_max * 3.6:.1f} km/h/s), "
       f"jerk = {brake.jerk:.2f} m/s^3")
 print(f"  trapezoidal above   {kmh(brake.speed_threshold_for_full_braking):.1f} km/h")
@@ -73,9 +73,9 @@ for v_kmh in (30, 60, 90):
 print(f"  time penalty per stop = a_max/jerk = {brake.a_max / brake.jerk:.2f} s")
 
 print()
-print("=" * 72)
-print("ALL 30 SEGMENTS  (minimum run time, no coasting, no margin)")
-print("=" * 72)
+print()
+print("All 30 segments: minimum run time, no coasting, no margin")
+print("-" * 57)
 segments = load_segments()
 print(f"  loaded {len(segments)} segments, "
       f"total {sum(s.distance_m for s in segments) / 1000:.1f} km")

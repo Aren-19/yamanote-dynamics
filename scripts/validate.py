@@ -27,9 +27,9 @@ FASTEST_LOOP_S = anchors["loop_times"]["fastest_circuit_s"]["value"]
 LINE_SPEED_KMH = anchors["line_speed_limit_kmh"]["value"]
 DWELL = practice["yamanote_dwell_scenarios_seconds"]
 
-print("=" * 78)
-print("PHASE 3  --  SIMULATED MINIMUM RUN TIME vs PUBLISHED TIMETABLE")
-print("=" * 78)
+print()
+print("Simulated minimum run time against the published timetable")
+print("-" * 58)
 print(f"  line               Yamanote, {len(segments)} segments, "
       f"{sum(s.distance_m for s in segments) / 1000:.1f} km")
 print(f"  stock              {traction.spec.name}")
@@ -48,9 +48,9 @@ print("  of it is dwell and documented de-rating practice. Decompose before")
 print("  attributing anything.")
 
 print()
-print("=" * 78)
-print("DECOMPOSITION LADDER  (central dwell scenario)")
-print("=" * 78)
+print()
+print("Decomposition ladder, central dwell scenario")
+print("-" * 44)
 central = decompose(traction, brake, segments,
                     dwell_s=DWELL["central"], published_loop_s=PUBLISHED_LOOP_S,
                     line_speed_kmh=LINE_SPEED_KMH)
@@ -61,9 +61,9 @@ print(f"  residual margin                    {central.residual_margin_s:.0f} s "
       f"= {100 * central.residual_margin_fraction:.1f}% of standard run time")
 
 print()
-print("=" * 78)
-print("DWELL SENSITIVITY  --  the assumption the result hangs on")
-print("=" * 78)
+print()
+print("Dwell sensitivity: the assumption the result hangs on")
+print("-" * 53)
 print(f"  {'scenario':<10} {'dwell':>8} {'total dwell':>13} {'residual':>11} "
       f"{'margin':>10}")
 print("  " + "-" * 60)
@@ -82,9 +82,9 @@ print("  must be below this. It is a hard upper bound on dwell, and therefore a"
 print("  hard lower bound on margin.")
 
 print()
-print("=" * 78)
-print("IDENTIFIABILITY LOCUS")
-print("=" * 78)
+print()
+print("Identifiability locus")
+print("-" * 21)
 print("  Every (dwell, margin) pair below fits the published loop time exactly.")
 print("  Public data cannot choose between them. This is the honest result.")
 print()
@@ -97,9 +97,9 @@ for d, m in zip(locus["dwell_s"], locus["margin_fraction"]):
     print(f"  {d:14.1f}   {100 * m:14.1f}%{flag}")
 
 print()
-print("=" * 78)
-print("DERATING SENSITIVITY  (MLIT consensus range is 2-5 km/h)")
-print("=" * 78)
+print()
+print("Derating sensitivity, MLIT consensus range 2-5 km/h")
+print("-" * 51)
 print(f"  {'derate':>8} {'standard run':>14} {'residual @ central dwell':>26}")
 print("  " + "-" * 52)
 for derate in (0.0, 2.0, 3.0, 5.0):
@@ -110,9 +110,9 @@ for derate in (0.0, 2.0, 3.0, 5.0):
           f"{d.residual_margin_s:16.0f} s  ({100 * d.residual_margin_fraction:.1f}%)")
 
 print()
-print("=" * 78)
-print("BRAKE RATE SENSITIVITY  --  the largest single lever in the model")
-print("=" * 78)
+print()
+print("Brake rate sensitivity: the largest single lever in the model")
+print("-" * 61)
 print("  4.2 km/h/s is the MAXIMUM service brake rate. Drivers do not use maximum")
 print("  service braking into every platform, and MLIT records that operators")
 print("  build driveability into the run curve. Nothing in the public record says")
@@ -130,9 +130,9 @@ for rate_kmh_s in (4.2, 3.5, 3.0, 2.5):
           f"({100 * d.residual_margin_fraction:.1f}%)")
 
 print()
-print("=" * 78)
-print("PASSENGER LOAD SENSITIVITY  --  who is on board is also an assumption")
-print("=" * 78)
+print()
+print("Passenger load: who is on board is also an assumption")
+print("-" * 53)
 print("  Load factor is passengers as a fraction of published capacity, and every")
 print("  figure above uses 1.0. Heavier trains accelerate more slowly, so the")
 print("  minimum run time is a function of an assumption about who is on board.")
@@ -172,10 +172,9 @@ print("  zero-margin bound. The direction of the bias is known even though its")
 print("  size is not, because mean load is not published.")
 
 print()
-print("=" * 78)
-print("INVERTED INFERENCE  --  constrain the DOCUMENTED quantity, solve for the")
-print("                        UNDOCUMENTED one")
-print("=" * 78)
+title = "Inverted: constrain what is documented, solve for what is not"
+print(title)
+print("-" * len(title))
 print("  Margin practice is documented (MLIT: JR East adds margin; industry norm")
 print("  is a few percent). Dwell is not documented for this line at all. So fix")
 print("  the margin at documented levels and solve for the dwell the timetable")
@@ -194,9 +193,9 @@ for rate_kmh_s in (4.2, 3.0):
         print(f"    {100 * margin:14.0f}% {dw:18.1f} s")
     print()
 
-print("=" * 78)
-print("PER-SEGMENT  (quantization-limited -- see warning)")
-print("=" * 78)
+print()
+print("Per-segment, quantization-limited: see the warning below")
+print("-" * 56)
 print("  Public per-segment times are minute-rounded. A 2-minute segment carries")
 print("  +/- 30 s of quantization against a few-percent effect. Reported for")
 print("  completeness; not used for any quantitative claim.")

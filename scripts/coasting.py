@@ -27,19 +27,19 @@ def kwh(j: float) -> float:
     return j / JOULES_PER_KWH
 
 
-print("=" * 80)
-print("PHASE 6  --  OPTIMAL COASTING")
-print("=" * 80)
+print()
+print("Optimal coasting")
+print("-" * 16)
 print("  Four-phase profile: accelerate -> cruise -> coast -> brake.")
 print("  With the shape fixed, the strategy is ONE number per segment: where")
 print("  coasting starts. Bisect on it to hit a target run time.")
 
 demo = max(segments, key=lambda s: s.distance_m)
 print()
-print("=" * 80)
+print()
 print(f"WORKED EXAMPLE  --  {demo.from_station} to {demo.to_station}, "
       f"{demo.distance_m:.0f} m")
-print("=" * 80)
+print("-" * 78)
 
 flat = evaluate(traction, brake, demo.distance_m, speed_limit_ms=V_LIMIT, dt=DT,
                 label="flat out")
@@ -58,9 +58,9 @@ for factor in (1.02, 1.05, 1.10, 1.20):
           f"{s.run_time_s:7.1f}s {kwh(s.net_energy_j):9.2f}")
 
 print()
-print("=" * 80)
-print("PARETO FRONT  --  coasting against simply cruising slower")
-print("=" * 80)
+print()
+print("Pareto front: coasting against simply cruising slower")
+print("-" * 53)
 print("  Both strategies hit the SAME run time. Comparing coasting against a")
 print("  flat-out run would be meaningless: the flat-out run is faster, so of")
 print("  course it uses more energy. The question is whether coasting beats the")
@@ -82,9 +82,9 @@ for p in front:
           f"{p.coast.peak_speed_kmh:8.0f}k {p.slower.peak_speed_kmh:9.0f}k")
 
 print()
-print("=" * 80)
-print("COASTING AND REGENERATION ARE PARTIAL SUBSTITUTES")
-print("=" * 80)
+print()
+print("Coasting and regeneration are partial substitutes")
+print("-" * 49)
 print("  Coasting saves energy by not spending it. Regeneration saves energy by")
 print("  recovering what was spent. The better the regeneration, the less")
 print("  coasting adds on top -- so the value of coasting depends on a number")
@@ -105,9 +105,9 @@ for rec in (0.0, 0.3, 0.7, 1.0):
           f"{100*saving:9.1f}%")
 
 print()
-print("=" * 80)
-print("WHOLE CIRCUIT  --  coasting applied to every segment")
-print("=" * 80)
+print()
+print("Whole circuit: coasting applied to every segment")
+print("-" * 48)
 print("  Each segment is solved to the same proportional slowdown, so the whole")
 print("  circuit stretches uniformly. This is a simplification: a real optimiser")
 print("  would distribute the extra time unevenly, spending more of it where it")

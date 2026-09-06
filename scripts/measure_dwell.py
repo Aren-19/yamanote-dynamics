@@ -31,9 +31,9 @@ replay = "--replay" in sys.argv
 jst = timezone(timedelta(hours=9))
 now_jst = datetime.now(jst)
 
-print("=" * 78)
-print("MEASURING STATION DWELL FROM ODPT REAL-TIME POSITIONS")
-print("=" * 78)
+print()
+print("Measuring station dwell from ODPT real-time positions")
+print("-" * 53)
 
 client = OdptClient.from_env()
 railway = YAMANOTE if client.authenticated else None
@@ -76,9 +76,9 @@ episodes = episodes_from_samples(samples)
 bracketed = [e for e in episodes if e.bracketed]
 
 print()
-print("=" * 78)
-print("EPISODES")
-print("=" * 78)
+print()
+print("Episodes")
+print("-" * 8)
 print(f"  observations         {len(samples)}")
 print(f"  distinct trains      {len({s.train for s in samples})}")
 print(f"  standing episodes    {len(episodes)}")
@@ -99,9 +99,9 @@ if not bracketed:
 stats = aggregate(episodes)
 
 print()
-print("=" * 78)
-print("DWELL, AS AN INTERVAL")
-print("=" * 78)
+print()
+print("Dwell, as an interval")
+print("-" * 21)
 print("  Polling censors every measurement: a dwell is at least the observed")
 print("  standing span, and at most the gap between the bracketing running")
 print("  observations. Both bounds are reported. The midpoint is a convenience,")
@@ -118,9 +118,8 @@ for st, (n, lo, hi) in sorted(stats.per_station.items(),
 
 if client.authenticated:
     print()
-    print("=" * 78)
-    print("WHAT THIS DOES TO PHASE 3")
-    print("=" * 78)
+    print("What this does to the dwell inference")
+    print("-" * 37)
     print("  Phase 3 inferred mean dwell of 39-50 s by constraining recovery")
     print("  margin to documented practice, because dwell could not be measured.")
     print(f"  Measured here: [{stats.mean_lower_s:.1f}, {stats.mean_upper_s:.1f}] s.")

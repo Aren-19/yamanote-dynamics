@@ -37,9 +37,9 @@ def run(seg, grade: float):
     return r, e
 
 
-print("=" * 80)
-print("GRADIENT SENSITIVITY  --  bounding the flat-track assumption")
-print("=" * 80)
+print()
+print("Gradient sensitivity: bounding the flat-track assumption")
+print("-" * 56)
 print("  Gradients are DERIVED from terrain elevation and overstate real track")
 print("  gradient. Treat every number here as an upper bound on the effect, not")
 print("  as a corrected result.")
@@ -57,9 +57,9 @@ print("  published local maximum, as a segment average should be, and in the")
 print("  direction the terrain implies. The profile is tracking real topography.")
 
 print()
-print("=" * 80)
-print("PER-SEGMENT EFFECT  (outer loop)")
-print("=" * 80)
+print()
+print("Per-segment effect, outer loop")
+print("-" * 30)
 print(f"  {'segment':<38} {'grade':>8} {'flat':>8} {'graded':>8} {'Δt':>8}")
 print("  " + "-" * 74)
 
@@ -85,9 +85,9 @@ print()
 print(f"  largest single-segment shift: {worst[0]} at {worst[1]:+.1f} s")
 
 print()
-print("=" * 80)
-print("CIRCUIT TOTALS  --  does it cancel?")
-print("=" * 80)
+print()
+print("Circuit totals: does it cancel?")
+print("-" * 31)
 
 inner_total = 0.0
 inner_energy = 0.0
@@ -121,9 +121,9 @@ print(f"  circuit run time penalty:  {pct_time:+.2f}%  (outer loop)")
 print(f"  circuit energy penalty:    {pct_energy:+.2f}%")
 
 print()
-print("=" * 80)
-print("VERDICT")
-print("=" * 80)
+print()
+print("Verdict")
+print("-" * 7)
 print("  Under gradients that are known to be EXAGGERATED, the circuit run time")
 print(f"  moves by {abs(pct_time):.2f}% and energy by {abs(pct_energy):.2f}%. Against a")
 print("  measured recovery-margin signal of a few percent, that is not negligible")

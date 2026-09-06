@@ -33,18 +33,18 @@ def kwh(j: float) -> float:
     return j / JOULES_PER_KWH
 
 
-print("=" * 78)
-print("PHASE 5  --  ENERGY ACCOUNTING")
-print("=" * 78)
+print()
+print("Energy accounting")
+print("-" * 17)
 print(f"  {len(segments)} segments, {sum(s.distance_m for s in segments)/1000:.1f} km, "
       f"dwell {dwell:.0f} s")
 print(f"  effective mass {traction.spec.effective_mass_kg(traction.load_factor)/1000:.0f} t "
       f"(load factor {traction.load_factor})")
 
 print()
-print("=" * 78)
-print("ENERGY BALANCE CHECK")
-print("=" * 78)
+print()
+print("Energy balance check")
+print("-" * 20)
 print("  Each segment starts and ends at rest, so the kinetic term drops out of")
 print("  the work-energy theorem and this identity must hold exactly:")
 print()
@@ -80,9 +80,9 @@ for step in (0.2, 0.1, 0.05, 0.02, 0.01):
 total, profile = circuit_energy(results, traction, dwell_s=dwell)
 
 print()
-print("=" * 78)
-print("WHERE THE ENERGY GOES  (one full circuit)")
-print("=" * 78)
+print()
+print("Where the energy goes, over one circuit")
+print("-" * 39)
 print(f"  {'destination':<34} {'kWh':>10} {'share of traction':>19}")
 print("  " + "-" * 66)
 print(f"  {'Traction work at the wheel':<34} {kwh(total.traction_j):10.1f} "
@@ -124,9 +124,9 @@ else:
         print("  This project does not resolve that; it records it.")
 
 print()
-print("=" * 78)
-print("WHY SO MUCH GOES TO THE BRAKES")
-print("=" * 78)
+print()
+print("Why so much goes to the brakes")
+print("-" * 30)
 frac_brake = total.brake_system_j / total.traction_j
 print(f"  {100*frac_brake:.0f}% of traction work ends up in the brakes rather than")
 print("  overcoming resistance. That is a direct consequence of the duty cycle:")
@@ -138,9 +138,9 @@ print("  long-distance line, where most traction work goes to aerodynamic drag")
 print("  and is unrecoverable by any means.")
 
 print()
-print("=" * 78)
-print("REGENERATION SENSITIVITY  (all three factors are MODELLED)")
-print("=" * 78)
+print()
+print("Regeneration sensitivity, all three factors modelled")
+print("-" * 52)
 print(f"  defaults: efficiency {REGEN_EFFICIENCY}, receptivity {REGEN_RECEPTIVITY}, "
       f"cutoff {REGEN_CUTOFF_KMH} km/h")
 print()
@@ -157,9 +157,9 @@ print("  line with 2.5 minute headway it should be high -- but it is not")
 print("  published, and the net figure moves by a third across this range.")
 
 print()
-print("=" * 78)
-print("EXTERNAL CROSS-CHECK  --  JR East's published regeneration rate")
-print("=" * 78)
+print()
+print("Cross-check against JR East's published regeneration rate")
+print("-" * 57)
 import json
 
 from tokyoline.data import DATA_DIR
@@ -193,9 +193,9 @@ for aux in (0.0, 100.0, AUXILIARY_KW, 200.0):
     print(f"  {aux:13.0f} {kwh(t3.net_j):10.1f} {share:13.1f}%")
 
 print()
-print("=" * 78)
-print("CUMULATIVE ENERGY AROUND THE LOOP")
-print("=" * 78)
+print()
+print("Cumulative energy around the loop")
+print("-" * 33)
 print(f"  {'km':>6} {'traction kWh':>14} {'net kWh':>10}")
 print("  " + "-" * 34)
 marks = [0, 5000, 10000, 15000, 20000, 25000, 30000, 34500]

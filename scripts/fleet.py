@@ -14,9 +14,9 @@ from tokyoline.fleet import Bounded, load_fleet
 fleet = load_fleet()
 JERK = DEFAULT_JERK_LIMIT
 
-print("=" * 86)
-print("PHASE 4  --  FLEET COMPARISON")
-print("=" * 86)
+print()
+print("Fleet comparison")
+print("-" * 16)
 print(f"  Shared comfort jerk limit: {JERK} m/s^3 across every class.")
 print()
 
@@ -30,9 +30,9 @@ for m in fleet.values():
           f"{m.starting_acceleration_kmh_s:6.2f}")
 
 print()
-print("=" * 86)
-print("THE CORE TRADE-OFF  --  acceleration against maximum speed")
-print("=" * 86)
+print()
+print("The core trade-off: acceleration against maximum speed")
+print("-" * 54)
 print("  Both from published figures. No modelling, no assumptions.")
 print()
 print(f"  {'class':<28} {'accel km/h/s':>13} {'v_max km/h':>12} {'product':>9}")
@@ -50,9 +50,9 @@ print("  Central specified it that way is not something this data establishes, s
 print("  no reason is asserted here.")
 
 print()
-print("=" * 86)
-print("POWER TO WEIGHT")
-print("=" * 86)
+print()
+print("Power to weight")
+print("-" * 15)
 print(f"  {'class':<28} {'kW/t':>12} {'kW/passenger':>14} {'motored':>9}")
 print("  " + "-" * 68)
 for m in sorted(fleet.values(), key=lambda x: -float(x.power_to_weight_kw_per_t())):
@@ -65,9 +65,9 @@ print("  N700S is shown as a LOWER bound: its formation mass is published only a
 print("  'under 700 t', so dividing by it can only understate power-to-weight.")
 
 print()
-print("=" * 86)
-print("BRAKING FROM OWN CRUISE SPEED  (identical jerk limit)")
-print("=" * 86)
+print()
+print("Braking from each class's own cruise speed")
+print("-" * 42)
 print(f"  {'class':<28} {'from':>7} {'rate':>16} {'distance':>11} {'time':>8}")
 print("  " + "-" * 76)
 for m in fleet.values():
@@ -93,9 +93,9 @@ print("  E5 and N700S publish no service deceleration in the sources consulted, 
 print("  they are omitted rather than filled with a peer value.")
 
 print()
-print("=" * 86)
-print("WHY CONSTANT-DECELERATION MODELS FAIL FOR HIGH-SPEED STOCK")
-print("=" * 86)
+print()
+print("Why constant-deceleration models fail for high-speed stock")
+print("-" * 58)
 e7 = fleet["E7"]
 print("  The E7 publishes a deceleration that varies with speed:")
 for v, a in e7.deceleration_curve:
@@ -121,8 +121,8 @@ print("  use a constant service rate without apology, and a Shinkansen extension
 print("  could not.")
 
 print()
-print("=" * 86)
-print("STEP-SIZE CHECK on the variable-rate integration")
-print("=" * 86)
+print()
+print("Step-size check on the variable-rate integration")
+print("-" * 48)
 for dt in (0.05, 0.02, 0.01, 0.005, 0.002):
     print(f"    dt = {dt:6.3f} s  ->  {e7.stopping_distance_m(jerk=JERK, dt=dt):9.2f} m")
