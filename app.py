@@ -722,11 +722,11 @@ st.sidebar.caption(
 st.markdown(
     f"""
     <div style="display:flex;align-items:center;gap:14px;margin-bottom:2px;">
-      <div style="width:6px;height:34px;background:#9ACD32;border-radius:3px;"></div>
+      <div style="width:4px;height:32px;background:#7CB342;"></div>
       <div>
-        <div style="font-size:1.45rem;font-weight:660;letter-spacing:-0.01em;">
+        <div style="font-size:1.45rem;font-weight:600;">
           山手線 &nbsp;Yamanote Line</div>
-        <div style="font-size:0.78rem;color:#5B6B7A;letter-spacing:0.02em;">
+        <div style="font-size:0.78rem;color:#5B6B7A;">
           {scenario_name} · {scen['window']} · {len(segments)} stations ·
           34.5 km · {spec.name.split(',')[0]}</div>
       </div>
@@ -995,11 +995,10 @@ with view_truth:
          "practice": checks[0]["published"], "unit": "%"},
     ]))
     st.caption(
-        "Only model outputs with a published counterpart appear here. Dwell is "
-        "excluded because the model's dwell is itself an inference. Traction "
-        "power and starting acceleration are excluded because they are inputs "
-        "read from the specification: comparing them to their own source "
-        "returns zero difference by construction."
+        "Only outputs with a published counterpart appear. Dwell is excluded "
+        "because the model's dwell is itself an inference; traction power and "
+        "starting acceleration because they are inputs, and comparing them to "
+        "their own source returns zero by construction."
     )
 
     band_lo, band_hi = 2.0, 4.0
@@ -1474,12 +1473,11 @@ with view_net:
         )
         chart(fig)
         st.caption(
-            "Styled after JR East's own diagrams: station numbers inside the "
-            "symbols, bold names and larger symbols for the busiest stations "
-            "by published FY2024 boardings. The red section is the only part "
-            "of the line where segment loading is measured. Position between "
-            "stations is interpolated linearly: a schematic, not a track "
-            "alignment."
+            "Station numbers sit inside the symbols; bold names and larger "
+            "symbols mark the busiest stations by FY2024 boardings. The red "
+            "section is the only part of the line where loading is measured. "
+            "Position between stations is interpolated linearly — a schematic, "
+            "not an alignment."
         )
 
     # ---- schedule --------------------------------------------------------
@@ -1522,9 +1520,9 @@ with view_net:
         else:
             st.success("Service brake rate governs; grip is not the constraint.")
         st.caption(
-            "Traction is barely affected by rail condition on this class — only "
-            "6 of 11 cars are powered but demanded effort is well under even wet-"
-            "rail capacity. Braking uses every axle, so that is where grip bites. "
+            "Rail condition barely affects traction on this class: 6 of 11 cars "
+            "are powered, but demanded effort is well under even wet-rail "
+            "capacity. Braking uses every axle, so that is where grip bites. "
             "Multipliers are modelled, not measured for this line."
         )
     with d2:
@@ -1538,11 +1536,11 @@ with view_net:
             f"**{abs(extra_t):.0f} t** against nominal."
         )
         st.caption(
-            "Congestion rate maps onto load factor exactly — both are passengers "
-            "over rated capacity — so this published figure feeds the physics "
-            "directly. Per-segment loading around the rest of the loop is NOT "
-            "public: it would need an origin-destination matrix that JR East does "
-            "not release. This model does not invent one."
+            "Congestion rate is passengers over rated capacity, the same thing "
+            "as load factor, so this published figure feeds the physics "
+            "directly. Loading around the rest of the loop would need an "
+            "origin-destination matrix JR East does not release, and this "
+            "model does not invent one."
         )
 
 
@@ -1785,11 +1783,10 @@ with view_analysis:
         st.divider()
         st.markdown("##### Energy balance check")
         st.markdown(
-            "Each segment starts and ends at rest, so the kinetic term vanishes "
-            "and E_traction = E_resistance + E_brake_system + E_grade must hold "
-            "exactly. Both sides are computed independently, which tests the "
-            "integrator rather than restating an assumption. The gravitational "
-            "term is zero here, because this page runs on level track."
+            "A segment starts and ends at rest, so E_traction = E_resistance + "
+            "E_brake_system + E_grade must hold. Both sides are computed "
+            "independently, so this tests the integrator. The gravity term is "
+            "zero here: this page runs level track."
         )
         err = e["balance_error"]
         if err < 5e-3:
@@ -1800,12 +1797,6 @@ with view_analysis:
                 "Something is wrong in the accounting — reduce the integration "
                 "step to check whether it converges."
             )
-        st.caption(
-            "This check previously failed at 7.3%, caused by cruise force being "
-            "recorded as effort_n, which returns zero at maximum speed — where "
-            "cruise occurs on this line. Run times were unaffected; energy "
-            "figures were wrong until corrected."
-        )
 
     # -- Sources -----------------------------------------------------------
     with tab_src:
@@ -2006,16 +1997,15 @@ with view_analysis:
         st.markdown("##### Access limitations")
         st.markdown(
             "- JR East returns HTTP 403 to automated requests for its own "
-            "ridership page and press PDFs. Those figures reach this project "
-            "through secondary compilations, and the 回生率 denominator could "
-            "not be confirmed at source.\n"
+            "ridership page and press PDFs, so those figures come through "
+            "secondary compilations and the 回生率 denominator is unconfirmed "
+            "at source.\n"
             "- ODPT real-time data for JR East requires a registered consumer "
             "key. The unauthenticated mirror carries Toei only.\n"
             "- vocab.odpt.org serves an expired certificate; the odpt:Train "
             "field semantics were confirmed against the live feed instead.\n"
-            "- Per-segment scheduled times are published only to the minute, so "
-            "±30 s exceeds the effect being measured and no per-segment "
-            "timetable is committed.\n"
+            "- Per-segment scheduled times are published only to the minute. "
+            "±30 s exceeds the effect being measured, so none is committed.\n"
             "- The Tokyo Subway Route Map (Bureau of Transportation TMG / Tokyo "
             "Metro) was supplied as a visual reference for the 2D diagram only; "
             "no data was taken from it."
@@ -2151,12 +2141,10 @@ with view_analysis:
                        "documented recovery-margin practice.")
 
         st.caption(
-            "The published circuit time is the mean of all services across the "
-            "day; the crowding slider sets a single load. Heavier trains are "
-            "slower, so a peak-crowding setting is not a like-for-like "
-            "comparison. Empty to the measured 125% peak moves the standard "
-            "run time by 105 s and implied dwell by 3.7 s, and a realistic "
-            "daily mean load raises implied dwell rather than lowering it."
+            "The published circuit time averages all services; the crowding "
+            "slider sets one load. Heavier trains are slower, so a peak setting "
+            "is not like-for-like. Empty to the measured 125% peak moves the "
+            "standard run time by 105 s and implied dwell by 3.7 s, upward."
         )
 
         st.divider()
@@ -2296,20 +2284,18 @@ with view_analysis:
         with c2:
             st.markdown("##### Where it would be wrong")
             st.markdown(
-                "- If true run time is materially higher than modelled — most "
-                "plausibly through unmodelled ATC — implied dwell falls "
-                "proportionally. A 17% error moves it from ~45 s to ~34 s.\n"
-                "- Per-segment claims are unsafe: minute-rounded schedules, "
-                "unmodelled gradient and 100 m distance rounding all bite "
-                "at that scale.\n"
-                "- A uniform speed cap is observationally equivalent to "
-                "recovery margin at the circuit level. Restrictions could "
-                "explain the whole 598 s residual only under a line-wide "
-                "51 km/h limit, 43% below the published line speed; a "
-                "severe 75 km/h cap accounts for 14% of it.\n"
-                "- Shinkansen aerodynamics do **not** follow from the commuter "
-                "Davis estimator, which is why those classes are refused rather "
-                "than rendered."
+                "- If true run time is higher than modelled, most plausibly "
+                "through unmodelled ATC, implied dwell falls with it. A 17% "
+                "error moves it from ~45 s to ~34 s.\n"
+                "- Per-segment claims are unsafe. Minute-rounded schedules, "
+                "unmodelled gradient and 100 m distance rounding all bite at "
+                "that scale.\n"
+                "- A uniform speed cap is indistinguishable from recovery "
+                "margin at circuit level. Restrictions could explain the whole "
+                "598 s only under a line-wide 51 km/h limit; a severe 75 km/h "
+                "cap accounts for 14%.\n"
+                "- Shinkansen aerodynamics do not follow from the commuter "
+                "Davis estimator, which is why those classes are refused."
             )
 
         st.divider()
@@ -2324,23 +2310,15 @@ with view_analysis:
         n4.metric("Distance rounding", "±0.8 s", "1σ on the circuit",
                   delta_color="off")
         st.caption(
-            "The energy balance is a real test, not a restatement: a segment "
-            "starts and ends at rest, so E_traction = E_resistance + E_brake + "
-            "E_grade must hold, and both sides are computed independently. It "
-            "initially failed at 7.3% and exposed a genuine bug — cruise force "
-            "was being recorded as zero because `effort_n` returns zero at "
-            "maximum speed, which is exactly where cruise happens on this line. "
-            "The gravitational term was added later, after the identity was "
-            "found to fail by up to 104% on a graded segment while holding "
-            "exactly on the level track everything had been tested on."
+            "The balance is a real test: both sides are computed "
+            "independently. It first failed at 7.3% and found a bug — cruise "
+            "force recorded as zero, because effort_n returns zero at maximum "
+            "speed, which is where cruise happens here."
         )
         st.caption(
-            "The integrator is not what limits precision. Published operating "
-            "kilometrage is stated to 0.1 km, so each station position carries "
-            "up to 50 m of rounding — 17,000 times the step-size error at "
-            "dt = 0.1 s. The circuit total absorbs it because the loop is "
-            "closed and each position appears in two segments with opposite "
-            "sign. A single segment does not: 50 m is worth 2–3 s there, which "
-            "is a second reason, alongside the minute-rounded timetable, that "
-            "no per-segment claim is made."
+            "Precision is limited by the input, not the integrator. Published "
+            "kilometrage is stated to 0.1 km, so each station carries up to "
+            "50 m of rounding, 17,000 times the step error at dt = 0.1 s. The "
+            "closed loop absorbs it; one segment does not, where 50 m is worth "
+            "2–3 s."
         )

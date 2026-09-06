@@ -76,7 +76,8 @@ class OdptClient:
         if self.consumer_key:
             params["acl:consumerKey"] = self.consumer_key
 
-        url = f"{self.base}/odpt:Train"
+        endpoint = f"{self.base}/odpt:Train"
+        url = endpoint
         if params:
             url += "?" + urllib.parse.urlencode(params)
 
@@ -92,7 +93,9 @@ class OdptClient:
                     f"Set {KEY_ENV} to a registered ODPT consumer key. JR East "
                     "real-time data is not on the unauthenticated mirror."
                 ) from exc
-            raise OdptError(f"HTTP {exc.code} from {url}: {body}") from exc
+            # `endpoint`, not `url`: the query string carries the consumer key,
+            # and this message reaches the console and any traceback.
+            raise OdptError(f"HTTP {exc.code} from {endpoint}: {body}") from exc
 
 
 def short_station(uri: str | None) -> str | None:

@@ -103,6 +103,9 @@ def start_server(port: int) -> tuple[subprocess.Popen, LogDrain]:
     cmd = [
         str(interpreter()), "-m", "streamlit", "run", str(APP),
         "--server.port", str(port),
+        # Loopback only. Streamlit otherwise binds every interface, which puts
+        # a desktop app on the local network.
+        "--server.address", "127.0.0.1",
         "--server.headless", "true",
         "--browser.gatherUsageStats", "false",
         "--server.fileWatcherType", "none",

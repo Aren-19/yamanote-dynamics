@@ -14,6 +14,9 @@ counted as a short dwell.
 
 from __future__ import annotations
 
+import io
+from unittest import mock
+
 import pytest
 
 from tokyoline.odpt import (
@@ -203,3 +206,23 @@ def test_bounds_always_bracket_the_truth():
     ])
     for e in episodes_from_samples(s):
         assert e.lower_bound_s <= e.upper_bound_s
+
+
+def test_http_errors_do_not_leak_the_consumer_key():
+    """The query string carries the key, and this message reaches the console
+    and any traceback. Only the base endpoint may appear in it."""
+    import urllib.error
+
+    from tokyoline.odpt import OdptClient, OdptError
+
+    client = OdptClient(consumer_key="SECRET-KEY-VALUE")
+
+    def raise_500(*args, **kwargs):
+        raise urllib.error.HTTPError(
+            "https://example.test", 500, "boom", {}, io.BytesIO(b"server error"))
+
+    with mock.patch("urllib.request.urlopen", raise_500),             pytest.raises(OdptError) as caught:
+        client.trains()
+
+    assert "SECRET-KEY-VALUE" not in str(caught.value)
+    assert "consumerKey" not in str(caught.value)
