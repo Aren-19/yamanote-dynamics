@@ -19,5 +19,10 @@ data/dwell_samples.json
 .idea/
 .DS_Store
 Thumbs.db
+# Test and coverage output
+.coverage
+.coverage.*
+htmlcov/
+
 # Local working copies, not part of the project
 _backup/
