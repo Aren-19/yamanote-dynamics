@@ -1,11 +1,4 @@
-"""Property tests for the physics core.
-
-These assert identities and bounds that must hold regardless of parameter
-values, rather than pinning specific numbers. A test that hard-codes "circuit
-time is 2309 s" fails whenever a coefficient is retuned and teaches nothing; a
-test that asserts energy is conserved catches the class of bug that actually
-occurred during development.
-"""
+"""Property tests for the physics core."""
 
 from __future__ import annotations
 
@@ -35,7 +28,6 @@ def segments():
     return load_segments()
 
 
-# ------------------------------------------------------------------- units
 
 def test_kmh_to_ms_exact():
     assert ms(90.0) == pytest.approx(25.0)
@@ -48,7 +40,6 @@ def test_kmhs_to_ms2_is_the_same_factor():
     assert ms2(3.0) == pytest.approx(0.8333, abs=1e-4)
 
 
-# -------------------------------------------------------------- resistance
 
 def test_davis_is_monotonic_in_speed():
     d = DavisCoefficients(A=4000.0, B=90.0, C=9.5)
@@ -75,7 +66,6 @@ def test_estimated_coefficients_land_in_the_expected_band(model):
     assert 22.0 <= traction.davis.specific_n_per_tonne(25.0, mass) <= 38.0
 
 
-# ---------------------------------------------------------------- adhesion
 
 def test_adhesion_falls_with_speed():
     values = [adhesion_coefficient(v) for v in (0, 10, 20, 25)]
@@ -83,13 +73,10 @@ def test_adhesion_falls_with_speed():
 
 
 def test_adhesion_never_binds_for_this_class(model):
-    """Six of eleven cars powered leaves a wide margin. If this fails, the
-    model has silently become wheelslip-limited."""
     traction, _ = model
     assert not any(traction.adhesion_binds(i * 0.5) for i in range(51))
 
 
-# ----------------------------------------------------------------- braking
 
 def test_jerk_penalty_is_independent_of_initial_speed():
     """For a trapezoidal stop the penalty is exactly a_max/j, whatever v0."""
@@ -127,7 +114,6 @@ def test_brake_trajectory_ends_at_rest():
     assert traj["x"][-1] == pytest.approx(b.distance_to_stop(25.0), rel=1e-6)
 
 
-# ---------------------------------------------------------------- traction
 
 def test_effort_is_zero_at_maximum_speed(model):
     """The driver stops accelerating at the limit."""
@@ -136,8 +122,7 @@ def test_effort_is_zero_at_maximum_speed(model):
 
 
 def test_capability_is_positive_at_maximum_speed(model):
-    """The machine can still produce force there, which is what holds cruise.
-    Conflating this with effort_n made the energy balance fail at 7.3%."""
+    """The machine can still produce force there, which is what holds cruise."""
     traction, _ = model
     assert traction.capability_n(traction.spec.max_speed_ms) > 0.0
 
@@ -157,7 +142,6 @@ def test_effort_follows_constant_power_above_base_speed(model):
                                                          rel=1e-6)
 
 
-# ----------------------------------------------------- segment integration
 
 def test_train_stops_exactly_at_the_platform(model, segments):
     """The backward brake-curve intersection exists to make this exact."""
@@ -211,13 +195,8 @@ def test_impossible_segment_is_rejected(model):
         simulate_segment(traction, brake, -5.0)
 
 
-# ------------------------------------------------------------------ energy
 
 def test_energy_balance_holds(model, segments):
-    """E_traction = E_resistance + E_brake, because each segment starts and
-    ends at rest so the kinetic term drops out. Both sides are computed
-    independently, so this tests the integrator rather than restating an
-    assumption. This is the check that caught the cruise-force bug."""
     traction, brake = model
     for seg in segments[:8]:
         r = simulate_segment(traction, brake, seg.distance_m,
@@ -255,7 +234,6 @@ def test_net_energy_falls_as_receptivity_rises(model, segments):
     assert all(b < a for a, b in zip(nets, nets[1:]))
 
 
-# -------------------------------------------------------------------- mass
 
 def test_effective_mass_exceeds_static_mass():
     spec = load_spec()

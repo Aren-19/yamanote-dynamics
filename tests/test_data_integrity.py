@@ -1,15 +1,4 @@
-"""Integrity checks on the data layer.
-
-The project's central claim is that every parameter is tagged with where it
-came from, and that bounds and gaps survive rather than quietly becoming point
-values. Nothing enforced it: a hand edit could drop a tag, change a distance,
-or turn "under 700 t" into "700 t", and every downstream number would shift
-without complaint.
-
-These also check the data's own physical invariants. The loop closes, so
-segment distances sum to the published total and the elevation profile returns
-to where it started.
-"""
+"""Integrity checks on the data layer."""
 
 from __future__ import annotations
 
@@ -36,7 +25,6 @@ VALID_STATUSES = {
 }
 
 
-# ------------------------------------------------------------------ stations
 
 def test_thirty_stations():
     assert len(load_stations()) == 30
@@ -44,8 +32,7 @@ def test_thirty_stations():
 
 
 def test_segment_distances_sum_to_the_published_loop():
-    """34.5 km is published. The loader asserts this too, but a test states
-    it as a requirement rather than an implementation detail."""
+    """34.5 km is published. The loader asserts this too, but a test states."""
     assert sum(s.distance_m for s in load_segments()) == pytest.approx(34_500,
                                                                       abs=1)
 
@@ -78,9 +65,7 @@ def test_jy_numbering_is_complete_and_unique():
 
 
 def test_jy_numbering_runs_opposite_to_the_file_order():
-    """JY01 is Tokyo and the numbers increase in the inner-loop direction,
-    while this file is ordered by outer-loop kilometrage from Shinagawa. If
-    they ever agree, one of the two has been renumbered by mistake."""
+    """JY01 is Tokyo and the numbers increase in the inner-loop direction,."""
     df = load_stations()
     by_name = dict(zip(df["name_en"], df["jy_number"]))
     assert by_name["Tokyo"] == "JY01"
@@ -91,7 +76,6 @@ def test_jy_numbering_runs_opposite_to_the_file_order():
     assert df.iloc[0]["name_en"] == "Shinagawa"
 
 
-# --------------------------------------------------------------- coordinates
 
 def test_coordinates_cover_every_station():
     coords = load_coordinates()
@@ -105,7 +89,6 @@ def test_coordinates_are_inside_tokyo():
     assert coords["lon"].between(139.6, 139.9).all()
 
 
-# ----------------------------------------------------------------- ridership
 
 def test_ridership_covers_every_station_exactly_once():
     r = load_ridership()
@@ -127,15 +110,13 @@ def test_ridership_is_ordered_by_rank():
     assert boardings[-1] > 0
 
 
-# ----------------------------------------------------------------- gradients
 
 def test_gradient_profile_covers_every_segment():
     assert len(load_gradients()) == 30
 
 
 def test_elevation_returns_to_its_starting_point():
-    """A closed loop cannot have a net climb. If this fails the profile was
-    edited into something that is not a circuit."""
+    """A closed loop cannot have a net climb. If this fails the profile was."""
     import csv
 
     with open(DATA_DIR / "gradients.csv", encoding="utf-8") as fh:
@@ -156,7 +137,6 @@ def test_gradients_are_consistent_with_rise_and_distance():
         assert float(r["grade_permille"]) == pytest.approx(expected, abs=0.01)
 
 
-# ------------------------------------------------------------- provenance
 
 def _tagged_nodes(node, path=""):
     """Yield (path, dict) for every mapping that carries a 'value' key."""
@@ -170,11 +150,7 @@ def _tagged_nodes(node, path=""):
             yield from _tagged_nodes(v, f"{path}[{i}]")
 
 
-#: Files using the {"value": ..., "status": ...} convention, with the number of
-#: tagged parameters each is expected to contain. The counts stop the check
-#: passing vacuously: congestion.json and regeneration.json are deliberately
-#: absent because they document sources in prose rather than per-parameter, and
-#: including them would have meant asserting over zero nodes.
+#: Files using the value/status convention, and their minimum node count.
 TAGGED_FILES = {
     "rolling_stock.json": 15,
     "fleet.json": 50,
@@ -184,8 +160,6 @@ TAGGED_FILES = {
 
 @pytest.mark.parametrize("filename,minimum", TAGGED_FILES.items())
 def test_every_valued_parameter_declares_its_provenance(filename, minimum):
-    """A parameter with a value but no status is exactly the failure mode the
-    whole tagging convention exists to prevent."""
     with open(DATA_DIR / filename, encoding="utf-8") as fh:
         blob = json.load(fh)
 
@@ -222,8 +196,7 @@ def test_the_provenance_walker_actually_detects_a_missing_tag():
 
 
 def test_prose_documented_files_still_cite_their_sources():
-    """congestion.json and regeneration.json record provenance in prose rather
-    than per parameter, so they are checked for the citation itself."""
+    """congestion.json and regeneration.json record provenance in prose rather."""
     for filename in ("congestion.json", "regeneration.json"):
         with open(DATA_DIR / filename, encoding="utf-8") as fh:
             raw = fh.read()
@@ -233,15 +206,13 @@ def test_prose_documented_files_still_cite_their_sources():
         assert "MLIT" in raw or "JR East" in raw or "国土交通省" in raw, filename
 
 
-# ------------------------------------------------------------------- fleet
 
 def test_fleet_has_the_five_documented_classes():
     assert set(load_fleet()) == {"E235-0", "E233-0", "E5", "E7", "N700S"}
 
 
 def test_n700s_mass_stays_a_bound():
-    """Published only as 'under 700 t'. If this ever becomes a point value,
-    every ratio derived from it silently stops being a bound."""
+    """Published only as 'under 700 t'. If this ever becomes a point value,."""
     n700s = load_fleet()["N700S"]
     assert n700s.tare_mass_t is None
     assert n700s.tare_mass_bound_t == pytest.approx(700.0)
@@ -257,8 +228,7 @@ def test_classes_with_known_mass_do_not_report_bounds():
 
 
 def test_unpublished_deceleration_stays_unpublished():
-    """The E5 and N700S publish no service rate. Filling one in with a peer
-    value would make the braking comparison look complete when it is not."""
+    """The E5 and N700S publish no service rate. Filling one in with a peer."""
     for key in ("E5", "N700S"):
         assert load_fleet()[key].service_deceleration_kmh_s is None
         assert load_fleet()[key].stopping_distance_m() is None
@@ -279,16 +249,13 @@ def test_motor_counts_are_consistent_with_formation():
         assert 0.0 < m.motored_fraction <= 1.0
 
 
-# -------------------------------------------------------------- congestion
 
 def test_congestion_records_only_the_measured_section():
-    """MLIT publishes one critical section per direction. Claiming more would
-    require an origin-destination matrix that is not public."""
+    """MLIT publishes one critical section per direction. Claiming more would."""
     c = load_congestion()
     outer = c["critical_sections"]["outer_loop"]
     assert outer["from"] == "Ueno"
     assert outer["to"] == "Okachimachi"
     assert outer["congestion_rate_percent"] == 125
-    # The inner loop's rate was not obtained; it must stay null, not be
-    # borrowed from the outer loop.
+    # The inner loop rate is unknown and must stay null.
     assert c["critical_sections"]["inner_loop"]["congestion_rate_percent"] is None

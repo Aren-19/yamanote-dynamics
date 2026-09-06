@@ -1,15 +1,4 @@
-"""Structural invariants of a segment trajectory.
-
-The physics tests check what the model computes. These check that the object it
-returns is coherent -- phases in order, bookkeeping that adds up, no force
-where none should be applied. Every defect found in the solver so far has been
-in the control-phase machinery rather than the equations, and none of them
-would have broken an equation.
-
-Cheap, and they fail loudly. A trajectory that cruises after braking, or whose
-phase times do not sum to its own run time, is wrong whatever the run time
-says.
-"""
+"""Structural invariants of a segment trajectory."""
 
 from __future__ import annotations
 
@@ -20,8 +9,7 @@ from tokyoline import build_model, load_segments, simulate_segment
 from tokyoline.energy import segment_energy
 from tokyoline.segment import Phase
 
-# The control sequence is a total order. A trajectory may skip phases -- a short
-# segment never cruises -- but it may never return to one it has left.
+# The control sequence is a total order; phases may be skipped.
 PHASE_ORDER = {Phase.ACCEL: 0, Phase.CRUISE: 1, Phase.COAST: 2, Phase.BRAKE: 3}
 
 
@@ -49,7 +37,6 @@ def transitions(result):
     ]
 
 
-# ------------------------------------------------------------ phase ordering
 
 def test_phases_never_go_backwards(model, long_segment):
     seq = transitions(run(model, long_segment.distance_m))
@@ -64,8 +51,7 @@ def test_coasting_inserts_exactly_one_phase(model, long_segment):
 
 
 def test_a_short_segment_skips_cruise(model):
-    """500 m is the shortest on the line, and the train is still accelerating
-    when it has to start braking."""
+    """500 m is the shortest on the line, and the train is still accelerating."""
     seq = transitions(run(model, 500.0))
     assert [p.value for p in seq] == ["accel", "brake"]
     assert not run(model, 500.0).reached_line_speed
@@ -79,7 +65,6 @@ def test_phase_order_holds_at_every_segment_length(model, distance):
     )
 
 
-# ---------------------------------------------------------------- bookkeeping
 
 def test_phase_times_sum_to_the_run_time(model, long_segment):
     r = run(model, long_segment.distance_m)
@@ -108,19 +93,16 @@ def test_time_and_position_advance_monotonically(model, long_segment):
 
 
 def test_every_array_has_the_same_length(model, long_segment):
-    """A trajectory is read by index throughout the application; a ragged one
-    would misalign force against speed silently."""
+    """A trajectory is read by index throughout the application; a ragged one."""
     r = run(model, long_segment.distance_m)
     n = len(r.t)
     assert len(r.x) == len(r.v) == len(r.a) == len(r.phase) == n
     assert len(r.tractive_force_n) == n
 
 
-# --------------------------------------------------------------------- forces
 
 def test_no_tractive_effort_while_coasting_or_braking(model, long_segment):
-    """The defining property of both phases. Recording effort here would show
-    up as energy the train never used."""
+    """The defining property of both phases. Recording effort here would show."""
     r = run(model, long_segment.distance_m,
             coast_start_m=long_segment.distance_m * 0.5)
     unpowered = [p in (Phase.COAST, Phase.BRAKE) for p in r.phase]
@@ -128,17 +110,13 @@ def test_no_tractive_effort_while_coasting_or_braking(model, long_segment):
 
 
 def test_cruise_records_the_force_that_holds_speed(model, long_segment):
-    """The bug that broke the energy balance at 7.3 percent: cruise on this
-    line happens exactly at maximum speed, where effort_n returns zero, so the
-    force actually applied has to come from the holding calculation."""
     r = run(model, long_segment.distance_m)
     cruising = [p is Phase.CRUISE for p in r.phase]
     assert r.tractive_force_n[cruising].min() > 0.0
 
 
 def test_tractive_effort_never_exceeds_the_starting_value(model, long_segment):
-    """Effort is greatest at rest and falls under the power and adhesion
-    limits; nothing in the run may exceed it."""
+    """Effort is greatest at rest and falls under the power and adhesion."""
     traction, _ = model
     r = run(model, long_segment.distance_m)
     assert r.tractive_force_n.max() <= traction.effort_n(0.0) + 1.0
@@ -155,13 +133,11 @@ def test_acceleration_signs_match_the_phase(model, long_segment):
     r = run(model, long_segment.distance_m)
     accel = [p is Phase.ACCEL for p in r.phase]
     braking = [p is Phase.BRAKE for p in r.phase]
-    # The final sample of each phase sits on the boundary, where the sign is
-    # about to change; everything before it must be unambiguous.
+    # The last sample of each phase sits on the boundary.
     assert (r.a[accel][:-1] > 0.0).all()
     assert (r.a[braking][:-1] < 0.0).all()
 
 
-# ------------------------------------------------------------------ coasting
 
 def test_run_time_falls_as_the_speed_limit_rises(model, long_segment):
     times = [
@@ -172,8 +148,6 @@ def test_run_time_falls_as_the_speed_limit_rises(model, long_segment):
 
 
 def test_later_coast_onset_is_faster_and_costs_more(model, long_segment):
-    """The trade-off the optimal-driving solver bisects on. If it were not
-    monotone the bisection would be meaningless."""
     traction, _ = model
     times, energies = [], []
     for fraction in (0.3, 0.4, 0.5, 0.6, 0.7):
@@ -200,8 +174,7 @@ def test_coasting_trades_time_for_energy_against_running_flat_out(model,
 
 def test_coast_onset_beyond_the_brake_point_changes_nothing(model,
                                                             long_segment):
-    """The train is already braking, so there is nothing left to coast
-    through. It must be ignored rather than treated as an error."""
+    """The train is already braking, so there is nothing left to coast."""
     plain = run(model, long_segment.distance_m)
     late = run(model, long_segment.distance_m,
                coast_start_m=long_segment.distance_m * 0.999)

@@ -1,17 +1,4 @@
-"""Jerk-limited braking.
-
-Deceleration ramps in, holds, then ramps out. The ramp-out matters as much as
-the ramp-in: if deceleration does not reach zero as speed does, the train stops
-with a lurch.
-
-The jerk limit costs a_max/j seconds per stop whatever the initial speed --
-about 1.6 s for the E235, so 47 s over a circuit against a scheduled 3948 s. It
-also means the brake application point is not a v^2/2a lookup, so the solver has
-to intersect a backward brake curve with the forward run curve.
-
-a_max and jerk are positive magnitudes. Deceleration is applied as a negative
-acceleration internally.
-"""
+"""Jerk-limited braking."""
 
 from __future__ import annotations
 
@@ -21,24 +8,12 @@ from dataclasses import dataclass
 import numpy as np
 
 #: Comfort jerk limit for standing passengers, m/s^3.
-#: Literature puts the acceptable range at roughly 0.5-1.0; 0.75 is the midpoint.
-#: MODELLED, not published for this line or class.
 DEFAULT_JERK_LIMIT = 0.75
 
 
 @dataclass(frozen=True)
 class BrakeProfile:
-    """A jerk-limited deceleration profile to a stand.
-
-    `a_max` is the maximum deceleration magnitude in m/s^2, `jerk` its maximum
-    rate of change in m/s^3.
-
-    The published figure for Japanese stock (4.2 km/h/s for the E235) is a net
-    rate, so running resistance is not added on top of it while braking -- unlike
-    coasting, where resistance is the only retarding force. That reading is
-    standard and conservative: it does not credit the model with free
-    deceleration.
-    """
+    """A jerk-limited deceleration profile to a stand."""
 
     a_max: float
     jerk: float = DEFAULT_JERK_LIMIT
@@ -51,26 +26,18 @@ class BrakeProfile:
 
     @property
     def speed_threshold_for_full_braking(self) -> float:
-        """Initial speed below which the profile is triangular, not trapezoidal.
-
-        Below ``a_max^2 / j`` there is not enough speed to reach full
-        deceleration before the ramp-out must begin, so the hold phase vanishes.
-        """
+        """Initial speed below which the profile is triangular, not trapezoidal."""
         return self.a_max ** 2 / self.jerk
 
     def is_trapezoidal(self, v0: float) -> bool:
         return v0 >= self.speed_threshold_for_full_braking
 
     def peak_deceleration(self, v0: float) -> float:
-        """Actual peak deceleration reached when stopping from `v0`.
-
-        Equals `a_max` for a trapezoidal stop; less for a triangular one.
-        """
+        """Actual peak deceleration reached when stopping from `v0`."""
         if self.is_trapezoidal(v0):
             return self.a_max
         return math.sqrt(max(v0, 0.0) * self.jerk)
 
-    # ------------------------------------------------------- closed solution
 
     def phase_durations(self, v0: float) -> tuple[float, float, float]:
         """Durations of (ramp-in, hold, ramp-out) when stopping from `v0`."""
@@ -90,22 +57,12 @@ class BrakeProfile:
         return (t_ramp, t_hold, t_ramp)
 
     def time_to_stop(self, v0: float) -> float:
-        """Total time to come to a stand from `v0`, in seconds.
-
-        For a trapezoidal stop this reduces to ``v0 / a_max + a_max / j`` --
-        the idealised time plus a fixed jerk penalty.
-        """
+        """Total time to come to a stand from `v0`, in seconds."""
         t1, t2, t3 = self.phase_durations(v0)
         return t1 + t2 + t3
 
     def distance_to_stop(self, v0: float) -> float:
-        """Distance required to come to a stand from `v0`, in metres.
-
-        Closed form, integrated phase by phase. This is the function the segment
-        solver inverts to find the brake application point, and computing it
-        analytically rather than by forward trial-and-error is what stops the
-        solver overshooting the platform.
-        """
+        """Distance required to come to a stand from `v0`, in metres."""
         v0 = max(v0, 0.0)
         if v0 == 0.0:
             return 0.0
@@ -128,28 +85,16 @@ class BrakeProfile:
         return d1 + d2 + d3
 
     def idealised_distance_to_stop(self, v0: float) -> float:
-        """Distance under an instant full-brake application: v0^2 / (2*a_max).
-
-        Only useful for quantifying what the jerk limit costs. Never used in the
-        simulation itself.
-        """
+        """Distance under an instant full-brake application: v0^2 / (2*a_max)."""
         return max(v0, 0.0) ** 2 / (2.0 * self.a_max)
 
     def jerk_penalty_distance(self, v0: float) -> float:
         """Extra stopping distance attributable to the jerk limit, in metres."""
         return self.distance_to_stop(v0) - self.idealised_distance_to_stop(v0)
 
-    # ------------------------------------------------------------ trajectory
 
     def trajectory(self, v0: float, dt: float = 0.01) -> dict[str, np.ndarray]:
-        """Sampled deceleration trajectory from `v0` to rest.
-
-        Integrated backwards in spirit but evaluated forwards from the closed
-        form, so it carries no integration error of its own. Returned distances
-        are measured from the brake application point.
-
-        Returns arrays keyed 't', 'v', 'x', 'a'.
-        """
+        """Sampled deceleration trajectory from `v0` to rest."""
         t_total = self.time_to_stop(v0)
         n = max(math.ceil(t_total / dt) + 1, 2)
         t = np.linspace(0.0, t_total, n)
@@ -197,48 +142,14 @@ class BrakeProfile:
 
 
 class SpeedDependentBrakeProfile:
-    """A jerk-limited stop whose deceleration limit varies with speed.
+    """A jerk-limited stop whose deceleration limit varies with speed."""
 
-    High-speed stock does not brake at a constant rate. The E7 publishes
-    2.69 km/h/s below 70 km/h falling to 1.44 at 275, because regenerative effort
-    is power-limited like tractive effort and adhesion falls with speed. Treating
-    it as constant understates the stop from line speed by about 30 percent.
-
-    For a 90 km/h EMU the whole range sits in the flat part of the curve, which is
-    why the Yamanote model uses BrakeProfile. This exists so high-speed stock runs
-    on the same solver, and the interface matches so simulate_segment takes either.
-
-    There is no closed form, so stops are integrated once at construction and
-    cached. distance_to_stop is called at every solver step, and integrating per
-    call would dominate the run time.
-
-    Given a flat curve this describes the same physics as BrakeProfile and agrees
-    with it to under a microsecond and a few tens of micrometres. Two details carry
-    most of that: the ramp-out is closed-form, because deceleration tends to zero
-    there and stepping into it cost 0.1 s on every stop; and the table is
-    interpolated against v-squared, since stopping distance is dominated by
-    v^2/2a.
-
-    Prefer BrakeProfile when the rate is constant. It is exact by construction
-    rather than by validation.
-    """
-
-    #: Speeds sampled when building the lookup table. Stopping distance varies
-    #: smoothly with initial speed, so interpolating between these is accurate
-    #: to well under a metre.
+    #: Speeds sampled when building the lookup table.
     TABLE_POINTS = 80
 
     def __init__(self, points, jerk=DEFAULT_JERK_LIMIT, *, dt=0.005,
                  v_max_ms=None):
-        """
-        Parameters
-        ----------
-        points : (speed km/h, deceleration km/h/s) pairs.
-        jerk : comfort jerk limit, m/s^3.
-        dt : integration step used to build the internal table, seconds.
-        v_max_ms : highest speed the table covers. Defaults to the fastest
-            point supplied.
-        """
+        """Parameters."""
         if not points:
             raise ValueError("points must not be empty")
         if jerk <= 0.0:
@@ -258,31 +169,21 @@ class SpeedDependentBrakeProfile:
 
         self._build_table()
 
-    # ---------------------------------------------------------------- rate
 
     def rate_ms2(self, v_ms):
-        """Deceleration limit at this speed, m/s^2.
-
-        Held flat outside the published range rather than extrapolated. The
-        curve is empirical, and continuing its slope past the last point would
-        invent behaviour that eventually goes negative.
-        """
+        """Deceleration limit at this speed, m/s^2."""
         v_kmh = max(float(v_ms), 0.0) * 3.6
         return float(np.interp(v_kmh, self._v_kmh, self._a_kmh_s)) / 3.6
 
     @property
     def a_max(self):
-        """Greatest deceleration anywhere on the curve, m/s^2.
-
-        Present so code written against BrakeProfile keeps working.
-        """
+        """Greatest deceleration anywhere on the curve, m/s^2."""
         return float(self._a_kmh_s.max()) / 3.6
 
     @property
     def speed_threshold_for_full_braking(self):
         return self.a_max ** 2 / self.jerk
 
-    # --------------------------------------------------------- integration
 
     def _integrate(self, v0):
         """Integrate one stop from v0, returning sampled t, v, x, a."""
@@ -309,19 +210,11 @@ class SpeedDependentBrakeProfile:
             target = self.rate_ms2(v)
             a_prev = a
 
-            # The ramp-out threshold: the speed at which easing deceleration
-            # off at the jerk limit brings the train exactly to rest.
+            # Ramp-out threshold.
             v_threshold = a * a / (2.0 * j)
 
             if v <= v_threshold:
-                # Close the stop out analytically. Once easing off, the rate
-                # curve no longer governs -- deceleration simply ramps down at
-                # the jerk limit -- so this phase is exact:
-                #     duration = a / j,  distance = a^3 / (6 j^2)
-                # Doing it in closed form matters because deceleration tends to
-                # zero here, which makes the phase extremely sensitive to where
-                # it is entered. Stepping into it on a step boundary instead
-                # cost roughly 0.1 s on every stop.
+                # Close the stop out analytically.
                 t += a / j
                 x += a ** 3 / (6.0 * j * j)
                 ts.append(t)
@@ -336,14 +229,11 @@ class SpeedDependentBrakeProfile:
             else:
                 a = max(a - j * dt, target)
 
-            # Trapezoidal in the deceleration: the average of the values at
-            # each end of the step rather than the end value alone, which
-            # would over-estimate the mean rate while jerk is ramping in.
+            # Trapezoidal in the deceleration.
             a_mean = 0.5 * (a_prev + a)
             dv = a_mean * dt
 
-            # Step exactly onto the threshold rather than past it, so the
-            # closed-form phase above starts where it should.
+            # Step exactly onto the threshold, not past it.
             next_threshold = a * a / (2.0 * j)
             if v - dv <= next_threshold and a_mean > 0.0:
                 step = (v - next_threshold) / a_mean
@@ -395,28 +285,19 @@ class SpeedDependentBrakeProfile:
         self._table_d = np.array(dist)
         self._table_t = np.array(time)
 
-    # ----------------------------------------------------------- interface
 
     def distance_to_stop(self, v0):
-        # Interpolated against v-squared, not v. Stopping distance is dominated
-        # by the v^2/2a term, so linear interpolation in v under-resolves the
-        # curvature and left about 2 cm of error -- enough to show up as
-        # platform overshoot in the segment solver. In v^2 the relationship is
-        # very nearly straight, and the error drops by two orders of magnitude.
+        # Interpolated against v-squared, not v.
         v = min(max(float(v0), 0.0), self.v_max_ms)
         return float(np.interp(v * v, self._table_v2, self._table_d))
 
     def time_to_stop(self, v0):
-        # Time is close to linear in v (v/a plus a fixed ramp penalty), so
-        # interpolating against v is already appropriate here.
+        # Time is close to linear in v.
         v = min(max(float(v0), 0.0), self.v_max_ms)
         return float(np.interp(v, self._table_v, self._table_t))
 
     def idealised_distance_to_stop(self, v0):
-        """Distance under an instant application of the low-speed rate.
-
-        Useful only for quantifying what the speed dependence costs.
-        """
+        """Distance under an instant application of the low-speed rate."""
         return max(float(v0), 0.0) ** 2 / (2.0 * self.rate_ms2(0.0))
 
     def jerk_penalty_distance(self, v0):
@@ -429,12 +310,7 @@ class SpeedDependentBrakeProfile:
         return float(np.abs(self._integrate(v0)["a"]).max())
 
     def trajectory(self, v0, dt=0.01):
-        """Sampled stop from v0, resampled onto a uniform grid of step dt.
-
-        Resampling matters because the caller splices this onto the end of a
-        fixed-step run, and a variable grid would leave a discontinuity in
-        sample spacing at the join.
-        """
+        """Sampled stop from v0, resampled onto a uniform grid of step dt."""
         raw = self._integrate(v0)
         total = float(raw["t"][-1])
         if total <= 0.0:

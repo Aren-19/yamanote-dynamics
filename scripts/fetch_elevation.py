@@ -1,23 +1,4 @@
-"""Fetch station elevations and derive a per-segment gradient profile.
-
-The model has always carried grade resistance and evaluated it at zero, because
-per-segment gradient is not published. That is true of *track* gradient, but
-station elevations can be sampled from a public terrain model and combined with
-published kilometrage to give a segment average.
-
-What this is not: it is ground elevation at the station coordinate, not track
-gradient. Much of the Yamanote runs on viaduct or in cutting, and several
-stations sit well above or below the surrounding ground. It is also an average
-over the segment, and real track has local grades steeper than that.
-
-So it is indicative, not a survey, and it can be cross-checked. ja.wikipedia
-gives the line maximum as 34 per-mille between Tabata and Nishi-Nippori, so the
-derived profile should show that segment as by far the steepest with an average
-somewhat below 34. If it does, the profile is picking up real terrain; if not,
-it is noise and should be discarded.
-
-Writes data/gradients.csv. Run once; the output is committed.
-"""
+"""Fetch station elevations and derive a per-segment gradient profile."""
 
 from __future__ import annotations
 

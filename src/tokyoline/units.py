@@ -1,9 +1,4 @@
-"""Unit constants and conversions.
-
-Japanese rolling stock performance is published in km/h/s, not m/s^2. Mixing the
-two silently is the easiest way to be wrong by a factor of 3.6, so every
-conversion in this project goes through here and internal state is ALWAYS SI.
-"""
+"""Unit constants and conversions."""
 
 #: Standard gravity, m/s^2.
 G = 9.80665

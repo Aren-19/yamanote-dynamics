@@ -1,20 +1,4 @@
-"""Optimal coasting, and the energy against run-time trade-off.
-
-The energy-minimal way to cover a fixed distance in a fixed time is known to be
-accelerate, cruise, coast, brake. Taking that shape as given, the strategy is
-one number per segment: where coasting starts. Run time falls monotonically as
-that point moves later, so a bisection hits any achievable target, and sweeping
-the target traces the Pareto front.
-
-The comparison that means anything holds run time equal. Coasting beating a
-flat-out run is not a result, because the flat-out run is faster. A driver who
-wants to take longer can just cruise slower, so both strategies are solved to
-the same target time and compared.
-
-Coasting and regeneration are partial substitutes -- one saves energy by not
-spending it, the other by recovering it -- which is why the scripts report the
-saving at several receptivities.
-"""
+"""Optimal coasting, and the energy against run-time trade-off."""
 
 from __future__ import annotations
 
@@ -76,13 +60,7 @@ def evaluate(
 
 def _bisect(f, lo: float, hi: float, target: float, *, tol: float,
             max_iter: int = 60, decreasing: bool = True) -> float:
-    """Find x in [lo, hi] with f(x) ~ target, for a monotonic f.
-
-    Plain bisection rather than a library root-finder: f involves a full
-    segment simulation, is only piecewise smooth (it goes flat once the coast
-    point moves past the brake application point), and a bracketing method that
-    cannot overshoot is the right tool for that.
-    """
+    """Find x in [lo, hi] with f(x) ~ target, for a monotonic f."""
     for _ in range(max_iter):
         if hi - lo < tol:
             break
@@ -106,13 +84,7 @@ def solve_coast_for_time(
     tol_m: float = 1.0,
     **energy_opts,
 ) -> Strategy | None:
-    """Find the coast onset that achieves `target_time_s`.
-
-    Returns None when the target is unreachable -- faster than the flat-out run,
-    or slower than coasting from the earliest sensible point. Returning None
-    rather than the nearest achievable strategy keeps an infeasible request from
-    silently becoming a feasible-looking answer.
-    """
+    """Find the coast onset that achieves `target_time_s`."""
     fastest = evaluate(traction, brake, distance_m, speed_limit_ms=speed_limit_ms,
                        coast_start_m=None, dt=dt, label="flat out", **energy_opts)
     if target_time_s <= fastest.run_time_s:
@@ -145,12 +117,7 @@ def solve_speed_for_time(
     tol_ms: float = 0.02,
     **energy_opts,
 ) -> Strategy | None:
-    """Find the reduced cruise speed that achieves `target_time_s`.
-
-    The naive alternative to coasting: go slower throughout, still full power to
-    the cruise speed and full braking at the end. This is what the coasting
-    strategy has to beat to be worth anything.
-    """
+    """Find the reduced cruise speed that achieves `target_time_s`."""
     fastest = evaluate(traction, brake, distance_m, speed_limit_ms=speed_limit_ms,
                        dt=dt, **energy_opts)
     if target_time_s <= fastest.run_time_s:
@@ -165,8 +132,7 @@ def solve_speed_for_time(
     if target_time_s > run_time(lo):
         return None
 
-    # Run time falls as the speed limit rises, so this is a DECREASING function
-    # of the search variable -- the same orientation as the coast search.
+    # Run time falls as the speed limit rises.
     v = _bisect(run_time, lo, speed_limit_ms, target_time_s, tol=tol_ms,
                 decreasing=True)
     return evaluate(traction, brake, distance_m, speed_limit_ms=v, dt=dt,
@@ -204,11 +170,7 @@ def pareto_front(
     dt: float = 0.1,
     **energy_opts,
 ) -> list[ParetoPoint]:
-    """Trace energy against run time, for both strategies.
-
-    `time_factors` are multiples of the flat-out minimum run time. A factor of
-    1.10 means "take 10 percent longer than the fastest possible run".
-    """
+    """Trace energy against run time, for both strategies."""
     fastest = evaluate(traction, brake, distance_m, speed_limit_ms=speed_limit_ms,
                        dt=dt, label="flat out", **energy_opts)
 

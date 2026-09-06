@@ -1,15 +1,4 @@
-"""How precise is the simulated run time, and what limits it?
-
-Two questions, and the answer to the second is not the integrator.
-
-First the step-size study: evidence that the fixed-step RK4 has converged,
-without which every run time here is an unquantified claim. Then the input:
-interstation distances come from published operating kilometrage stated to
-0.1 km, so each station position carries up to 50 m of rounding.
-
-Reporting the first without the second overstates the precision by several
-orders of magnitude.
-"""
+"""How precise is the simulated run time, and what limits it?"""
 
 from __future__ import annotations
 
@@ -60,7 +49,6 @@ print("  RK4 is 4th order, so halving dt should cut the error by roughly 16x")
 print("  in the smooth regions. Phase-switch handling limits the observed order.")
 
 
-# ------------------------------------------------------- input quantization
 
 print()
 print("=" * 78)
@@ -86,9 +74,7 @@ for d in (500.0, 1200.0, 2000.0):
 print()
 
 
-# dt = 0.2 s throughout the sampling: the sweep above puts the step error
-# there four orders of magnitude below the spread being measured, and 300
-# loops at a finer step would cost minutes for no change in the answer.
+# dt = 0.2 s: the step error is far below the spread being measured.
 def loop_time(seg_distances: np.ndarray, dt: float = 0.2) -> float:
     return sum(
         simulate_segment(traction, brake, float(d), speed_limit_ms=v_limit,
@@ -103,8 +89,7 @@ SAMPLES = 300
 totals = np.empty(SAMPLES)
 for i in range(SAMPLES):
     positions = cumulative + rng.uniform(-50.0, 50.0, size=cumulative.size)
-    # Differences around the closed loop: an error at one station lengthens one
-    # segment and shortens its neighbour, which is why this largely cancels.
+    # Around a closed loop the errors largely cancel.
     perturbed = np.diff(np.concatenate([positions, [positions[0] + loop_m]]))
     totals[i] = loop_time(perturbed)
 

@@ -1,10 +1,4 @@
-"""Tokyo line train dynamics and ridership model.
-
-A first-principles physics simulation of a real Tokyo rail line, validated
-against the published timetable. The point of the project is not the physics
-loop -- it is the quantified, explained gap between what the physics says is
-possible and what the railway actually schedules.
-"""
+"""Tokyo line train dynamics and ridership model."""
 
 from .brake import (
     DEFAULT_JERK_LIMIT,

@@ -41,7 +41,6 @@ print(f"  {len(segments)} segments, {sum(s.distance_m for s in segments)/1000:.1
 print(f"  effective mass {traction.spec.effective_mass_kg(traction.load_factor)/1000:.0f} t "
       f"(load factor {traction.load_factor})")
 
-# ---------------------------------------------------------------- balance
 print()
 print("=" * 78)
 print("ENERGY BALANCE CHECK")
@@ -78,7 +77,6 @@ for step in (0.2, 0.1, 0.05, 0.02, 0.01):
         w = max(w, bb.balance_error_fraction)
     print(f"    dt = {step:5.3f} s  ->  {w:.3e}")
 
-# ---------------------------------------------------------------- circuit
 total, profile = circuit_energy(results, traction, dwell_s=dwell)
 
 print()
@@ -125,7 +123,6 @@ else:
         print("  The two published anchors disagree about the same parameter.")
         print("  This project does not resolve that; it records it.")
 
-# ------------------------------------------------------------- resistance
 print()
 print("=" * 78)
 print("WHY SO MUCH GOES TO THE BRAKES")
@@ -140,7 +137,6 @@ print("  It is also why regeneration matters far more on a metro than on a")
 print("  long-distance line, where most traction work goes to aerodynamic drag")
 print("  and is unrecoverable by any means.")
 
-# --------------------------------------------------------------- regen
 print()
 print("=" * 78)
 print("REGENERATION SENSITIVITY  (all three factors are MODELLED)")
@@ -196,7 +192,6 @@ for aux in (0.0, 100.0, AUXILIARY_KW, 200.0):
     share = 100 * t3.auxiliary_j / t3.net_j if t3.net_j else 0.0
     print(f"  {aux:13.0f} {kwh(t3.net_j):10.1f} {share:13.1f}%")
 
-# --------------------------------------------------------------- profile
 print()
 print("=" * 78)
 print("CUMULATIVE ENERGY AROUND THE LOOP")

@@ -1,22 +1,4 @@
-"""Cross-class comparison.
-
-A commuter EMU and a high-speed set solve different problems: the E235
-accelerates at 3.0 km/h/s to 90 km/h, the E5 at 1.71 to 320. Acceleration
-against maximum speed shows the trade-off in one plot.
-
-Three rules the module keeps:
-
-1. Bounded quantities stay bounded. N700S formation mass is published only as
-   "under 700 t", so power-to-weight from it is tagged as a lower bound rather
-   than becoming a point value.
-2. Missing quantities stay missing. Service deceleration is not published for
-   the E5 or N700S, so they are left out of braking comparisons instead of
-   filled in from a peer.
-3. Speed-dependent braking is modelled where it is published. The E7's rate
-   falls from 2.69 km/h/s to 1.44 at 275 km/h because regenerative effort is
-   power-limited. Treating it as constant badly understates the stopping
-   distance -- harmless for a 90 km/h EMU, not for high-speed stock.
-"""
+"""Cross-class comparison."""
 
 from __future__ import annotations
 
@@ -37,11 +19,7 @@ from .units import KMH_TO_MS, KMHS_TO_MS2
 
 @dataclass(frozen=True)
 class Bounded:
-    """A quantity known only as a one-sided bound.
-
-    Exists so that a bound cannot be mistaken for a measurement further
-    downstream. Anything derived from it should carry `is_bound` through.
-    """
+    """A quantity known only as a one-sided bound."""
 
     value: float
     kind: str  # "upper" | "lower"
@@ -82,7 +60,6 @@ class FleetMember:
 
     decel_is_ambiguous: bool = False
 
-    # ------------------------------------------------------------- derived
 
     @property
     def motored_fraction(self) -> float:
@@ -110,11 +87,7 @@ class FleetMember:
         return self.tare_mass_t is None and self.tare_mass_bound_t is not None
 
     def power_to_weight_kw_per_t(self) -> float | Bounded:
-        """Installed power per tonne of tare mass.
-
-        Returns a Bounded when formation mass is only bounded: dividing by an
-        upper-bound mass yields a LOWER bound on power-to-weight.
-        """
+        """Installed power per tonne of tare mass."""
         ratio = self.total_power_kw / self.mass_for_ratios_t
         if self.mass_is_bound:
             return Bounded(ratio, "lower")
@@ -123,14 +96,9 @@ class FleetMember:
     def specific_power_kw_per_passenger(self) -> float | Bounded:
         return self.total_power_kw / self.capacity
 
-    # ------------------------------------------------------------- braking
 
     def deceleration_at_kmh(self, v_kmh: float) -> float | None:
-        """Service deceleration at a given speed, in km/h/s.
-
-        Uses the published speed-dependent curve when there is one, otherwise
-        the single published figure, otherwise None.
-        """
+        """Service deceleration at a given speed, in km/h/s."""
         if self.deceleration_curve:
             xs = [p[0] for p in self.deceleration_curve]
             ys = [p[1] for p in self.deceleration_curve]
@@ -139,12 +107,7 @@ class FleetMember:
 
     def brake_profile(self, jerk: float = DEFAULT_JERK_LIMIT,
                       dt: float = 0.005):
-        """The braking model for this class, or None if none is published.
-
-        Constant-rate classes get the closed-form BrakeProfile, which is exact.
-        Classes publishing a speed-dependent curve get the numerical profile.
-        Both satisfy the same interface, so callers do not branch.
-        """
+        """The braking model for this class, or None if none is published."""
         if self.deceleration_at_kmh(0.0) is None:
             return None
         if self.deceleration_curve:
@@ -158,14 +121,7 @@ class FleetMember:
     def stopping_distance_m(self, from_kmh: float | None = None,
                             jerk: float = DEFAULT_JERK_LIMIT,
                             dt: float = 0.005) -> float | None:
-        """Distance to stop from a given speed under a shared jerk limit.
-
-        Defaults to the class's own maximum operating speed, so each train
-        brakes from its own cruise under identical comfort constraints.
-
-        Returns None when the class publishes no deceleration figure. Callers
-        must handle that rather than receiving a plausible-looking default.
-        """
+        """Distance to stop from a given speed under a shared jerk limit."""
         profile = self.brake_profile(jerk, dt)
         if profile is None:
             return None
@@ -186,12 +142,7 @@ class FleetMember:
 
 def to_train_spec(m: FleetMember, *, passenger_mass_kg: float = 60.0,
                   lambda_rot: float = 0.08):
-    """Convert a fleet entry into a simulatable :class:`TrainSpec`.
-
-    Raises for classes that cannot be run. That is deliberate: it is better for
-    an unusable class to fail loudly than to be silently simulated with an
-    invented deceleration figure.
-    """
+    """Convert a fleet entry into a simulatable :class:`TrainSpec`."""
     from .stock import TrainSpec
     from .units import ms, ms2
 
@@ -222,22 +173,7 @@ def to_train_spec(m: FleetMember, *, passenger_mass_kg: float = 60.0,
 
 
 def simulatable(m: FleetMember) -> tuple[bool, str]:
-    """Whether a class can run on this line's model, and why not if it cannot.
-
-    High-speed stock is excluded on purpose. Speed-dependent braking is no longer
-    the obstacle -- SpeedDependentBrakeProfile handles it behind the same
-    interface. What remains:
-
-    * The Davis estimator was built for a blunt-nosed commuter EMU and does not
-      transfer to a streamlined 400 m set. fleet.json carries per-class aerodynamic
-      coefficients but marks the high-speed ones weakly grounded, and tunnel
-      aerodynamics are not modelled at all, which is first-order on the Tokaido.
-    * Yamanote geometry is wrong for the question. A 400 m Shinkansen between stops
-      1.15 km apart produces a number, not a meaningful one.
-
-    So the refusal is about the resistance model and the choice of line, not the
-    solver.
-    """
+    """Whether a class can run on this line's model, and why not if it cannot."""
     if m.category != "commuter EMU":
         return False, ("high-speed stock: the commuter Davis estimator does not "
                        "transfer, and Yamanote geometry is wrong for the "

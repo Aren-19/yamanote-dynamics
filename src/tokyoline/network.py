@@ -1,12 +1,4 @@
-"""Loop geometry and whole-circuit simulation.
-
-Coordinates are for drawing only; every distance in the physics comes from
-published kilometrage. The two never meet -- this maps a distance along the
-loop onto a coordinate, never the reverse.
-
-Position between stations is interpolated linearly. That is a schematic: fine
-for showing where a train is in the sequence, wrong if read as an alignment.
-"""
+"""Loop geometry and whole-circuit simulation."""
 
 from __future__ import annotations
 
@@ -62,10 +54,7 @@ class LoopGeometry:
         )
 
     def position_at(self, distance_m: float) -> tuple[float, float]:
-        """Interpolated (lat, lon) at a distance along the loop.
-
-        Wraps around, since it is a loop.
-        """
+        """Interpolated (lat, lon) at a distance along the loop."""
         d = float(distance_m) % self.total_m
         edges = np.append(self.cumulative_m, self.total_m)
         i = int(np.searchsorted(edges, d, side="right") - 1)
@@ -97,12 +86,7 @@ class LoopGeometry:
 
 @dataclass
 class Circuit:
-    """A full simulated circuit, sampled on a uniform time grid.
-
-    Includes dwell periods, so this is a schedule rather than a pure run-time
-    calculation. The dwell figure is an assumption -- see the validation view
-    for why it cannot be measured from public data.
-    """
+    """A full simulated circuit, sampled on a uniform time grid."""
 
     t: np.ndarray
     distance_m: np.ndarray
@@ -159,13 +143,7 @@ def simulate_circuit(
     dt: float = 0.1,
     sample_dt: float = 1.0,
 ) -> Circuit:
-    """Simulate a complete circuit including dwells, on a uniform time grid.
-
-    Resampling onto a uniform grid matters for the animation: the raw solver
-    output has a variable effective step around phase switches, and scrubbing a
-    time slider across a non-uniform grid makes the train appear to stutter even
-    though the physics is smooth.
-    """
+    """Simulate a complete circuit including dwells, on a uniform time grid."""
     times: list[np.ndarray] = []
     dists: list[np.ndarray] = []
     speeds: list[np.ndarray] = []
@@ -219,8 +197,7 @@ def simulate_circuit(
     d_raw = np.concatenate(dwell_flags)
     s_raw = np.concatenate(seg_idx)
 
-    # Strictly increasing time is required for interpolation; phase boundaries
-    # produce duplicate timestamps.
+    # Interpolation needs strictly increasing time.
     keep = np.concatenate([[True], np.diff(t_raw) > 1e-12])
     t_raw, x_raw, v_raw, a_raw, f_raw, d_raw, s_raw = (
         arr[keep] for arr in (t_raw, x_raw, v_raw, a_raw, f_raw, d_raw, s_raw)
@@ -247,15 +224,7 @@ def simulate_circuit(
 
 def journey_time_s(from_idx: int, to_idx: int, run_times: list[float],
                    dwell_s: float, outer: bool) -> float:
-    """Modelled time between two stations, including intermediate dwells.
-
-    Segment i runs from station i to i+1 outbound, so the inner loop traverses the
-    same segments backwards: leaving station i inbound covers segment i-1.
-
-    Dwell counts at every intermediate stop but not at the destination, since a
-    journey ends on arrival. A journey to the starting station is zero, not a full
-    circuit.
-    """
+    """Modelled time between two stations, including intermediate dwells."""
     n = len(run_times)
     if n == 0 or from_idx == to_idx:
         return 0.0

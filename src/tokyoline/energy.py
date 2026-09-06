@@ -1,26 +1,4 @@
-"""Traction energy accounting.
-
-Traction energy is the integral of effort against speed. The breakdown is the
-useful part, not the total.
-
-A segment starts and ends at rest, so the kinetic term drops out and
-
-    E_traction = E_resistance + E_brake_system + E_grade
-
-follows from the work-energy theorem. Both sides are computed independently, so
-the residual tests the integrator rather than restating an assumption; it is
-reported with every breakdown and should be rounding error. The grade term is
-zero on level track and cancels over a closed loop, but without it the residual
-reached 57 percent on a 20 per-mille grade.
-
-One trap: the published deceleration for Japanese stock is a net rate, already
-helped by running resistance. The brake system supplies m_eff*a - R(v), not
-m_eff*a. Crediting it with the whole would overstate what is available to
-regenerate.
-
-Regeneration parameters are modelled. JR East publishes no recovery fraction
-for the E235 on this line.
-"""
+"""Traction energy accounting."""
 
 from __future__ import annotations
 
@@ -32,23 +10,16 @@ from .resistance import grade_resistance
 from .segment import Phase, SegmentResult
 from .traction import TractionModel
 
-#: Speed below which regenerative braking is assumed unavailable and friction
-#: brakes take over, km/h. MODELLED. Real changeover is a control-system detail
-#: that varies with the brake blending strategy and is not published.
+#: Speed below which regenerative braking is unavailable, km/h.
 REGEN_CUTOFF_KMH = 5.0
 
 #: Motor-plus-inverter conversion efficiency, wheel to pantograph. MODELLED.
 REGEN_EFFICIENCY = 0.85
 
-#: Fraction of returned energy actually absorbed rather than burned off. On a
-#: line with roughly 2.5 minute headway there is almost always another train
-#: drawing current nearby, so receptivity is high -- but this is MODELLED, and
-#: it is the least defensible number in this module.
+#: Fraction of returned energy actually absorbed. MODELLED.
 REGEN_RECEPTIVITY = 0.70
 
 #: Auxiliary load: HVAC, lighting, compressors, control, for an 11-car set, kW.
-#: MODELLED. Material -- roughly a tenth of traction energy over a circuit -- so
-#: omitting it would understate net consumption noticeably.
 AUXILIARY_KW = 150.0
 
 JOULES_PER_KWH = 3.6e6
@@ -80,10 +51,7 @@ class EnergyBreakdown:
     """E_traction - (E_resistance + E_brake_system + E_grade). Should be ~0."""
 
     grade_j: float = 0.0
-    """Work done against gravity. Negative downhill, zero on level track.
-
-    Over a closed loop this cancels exactly, which is why circuit-level figures
-    are unaffected by gradient. Over a single segment it does not."""
+    """Work done against gravity. Negative downhill, zero on level track."""
 
     duration_s: float = 0.0
     distance_m: float = 0.0
@@ -113,20 +81,11 @@ class EnergyBreakdown:
         return (self.net_j / JOULES_PER_KWH) / (self.distance_m / 1000.0)
 
     def kwh_per_car_km(self, n_cars: int) -> float:
-        """Per car-km, which is how operators usually publish consumption.
-
-        Comparable across trains of different lengths, and the form in which
-        published metro figures (typically 2-4 kWh per car-km) are quoted.
-        """
+        """Per car-km, which is how operators usually publish consumption."""
         return self.kwh_per_km() / n_cars
 
     def wh_per_passenger_km(self, passengers: float) -> float:
-        """Net energy per passenger-km at a given loading.
-
-        Strongly dependent on occupancy, so it must be quoted with the loading
-        assumed. At crush loading a metro is among the most efficient ways to
-        move a person; at 3am with six passengers aboard it is not.
-        """
+        """Net energy per passenger-km at a given loading."""
         if passengers <= 0:
             return float("inf")
         return (self.net_j / JOULES_PER_KWH * 1000.0) / (self.distance_m / 1000.0) / passengers
@@ -175,13 +134,7 @@ def segment_energy(
     auxiliary_kw: float = AUXILIARY_KW,
     include_dwell_s: float = 0.0,
 ) -> tuple[EnergyBreakdown, EnergyProfile]:
-    """Account for the energy used over one interstation run.
-
-    `include_dwell_s` adds auxiliary load for a stationary period after the run,
-    which matters over a circuit: the hotel load runs during dwell too, and on a
-    line where roughly a quarter of the schedule is spent standing at platforms
-    that is not a negligible correction.
-    """
+    """Account for the energy used over one interstation run."""
     t = result.t
     v = result.v
     m_eff = traction.spec.effective_mass_kg(traction.load_factor)
@@ -193,27 +146,14 @@ def segment_energy(
 
     is_brake = np.array([p is Phase.BRAKE for p in result.phase])
 
-    # Brake system force is the NET commanded deceleration less whatever is
-    # already retarding the train: running resistance, and gravity on a
-    # gradient. Uphill, gravity does part of the braking and the brakes supply
-    # less; downhill they must supply more. Omitting the gravitational part
-    # left the balance out by 104 percent on a 20 per-mille descent, with the
-    # sign flipping between climb and descent -- which is what identified it.
-    # Clamped at zero: during the jerk ramps
-    # the commanded rate is small enough that resistance alone can exceed it, and
-    # a brake cannot absorb negative energy.
+    # Brake force is the net deceleration less resistance and gravity.
     grade_force_n = grade_resistance(traction.spec.mass_kg(traction.load_factor),
                                      result.grade_permille)
     decel_force = m_eff * np.abs(result.a) * is_brake
     p_brake_system = np.maximum(
         decel_force - resistance_n - grade_force_n, 0.0) * v * is_brake
 
-    # Holding a constant speed downhill takes braking, not traction. Where
-    # gravity exceeds running resistance the driver is on the brake to stay at
-    # the limit, and the cruise phase records no tractive effort because there
-    # is none to record. Without this term the work gravity does during a
-    # descent is absorbed by nothing and the balance cannot close: it was out
-    # by 81 percent on a 20 per-mille fall.
+    # Holding speed downhill takes braking, not traction.
     is_cruise = np.array([p is Phase.CRUISE for p in result.phase])
     holding_force = resistance_n + grade_force_n
     p_brake_system = p_brake_system + (
@@ -241,9 +181,7 @@ def segment_energy(
 
     kinetic_peak = 0.5 * m_eff * float(v.max()) ** 2
 
-    # Gravitational work over the segment. Path independent, so it is
-    # m*g*sin(theta)*distance rather than an integral: the train ends at rest
-    # either way, and only the net height change matters.
+    # Gravitational work. Path independent.
     mass = traction.spec.mass_kg(traction.load_factor)
     e_grade = grade_resistance(mass, result.grade_permille) * result.distance_m
 
@@ -277,11 +215,7 @@ def circuit_energy(
     dwell_s: float = 0.0,
     **kwargs,
 ) -> tuple[EnergyBreakdown, EnergyProfile]:
-    """Accumulate energy over every segment of a circuit.
-
-    Returns the summed breakdown and a single cumulative profile whose distance
-    axis runs continuously around the loop.
-    """
+    """Accumulate energy over every segment of a circuit."""
     total: EnergyBreakdown | None = None
     xs: list[np.ndarray] = []
     tr: list[np.ndarray] = []
@@ -306,8 +240,7 @@ def circuit_energy(
         tr_off = tr[-1][-1]
         rs_off = rs[-1][-1]
         rg_off = rg[-1][-1]
-        # Carry the dwell auxiliary load across the join so the net curve does
-        # not silently lose it at every station.
+        # Carry the dwell auxiliary load across the join.
         nt_off = nt[-1][-1] + kwargs.get("auxiliary_kw", AUXILIARY_KW) * 1000.0 * dwell_s
 
     assert total is not None

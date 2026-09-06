@@ -1,11 +1,4 @@
-"""Tests for the coasting solver, loop geometry and rail conditions.
-
-The coasting module once shipped a bisection with an inverted monotonicity
-flag. It did not crash: it pinned the search at its lower bound and produced a
-plausible table of savings that was nonsense. Several tests here exist to catch
-that class of failure, by checking a solver actually reaches the target it was
-given rather than just returning a number.
-"""
+"""Tests for the coasting solver, loop geometry and rail conditions."""
 
 from __future__ import annotations
 
@@ -38,11 +31,9 @@ def long_segment():
     return max(load_segments(), key=lambda s: s.distance_m)
 
 
-# ------------------------------------------------------------ coast solver
 
 def test_coast_solver_hits_the_requested_time(model, long_segment):
-    """The check that would have caught the inverted bisection flag: a solver
-    must reach the target it was given, not just return something."""
+    """The check that would have caught the inverted bisection flag: a solver."""
     traction, brake = model
     v = traction.spec.max_speed_ms
     flat = evaluate(traction, brake, long_segment.distance_m, speed_limit_ms=v,
@@ -56,8 +47,7 @@ def test_coast_solver_hits_the_requested_time(model, long_segment):
 
 
 def test_slower_cruise_solver_hits_the_requested_time(model, long_segment):
-    """Same check for the comparison strategy. This is the one that was
-    broken: it pinned at 18 km/h for every target."""
+    """Same check for the comparison strategy. This is the one that was."""
     traction, brake = model
     v = traction.spec.max_speed_ms
     flat = evaluate(traction, brake, long_segment.distance_m, speed_limit_ms=v,
@@ -73,8 +63,6 @@ def test_slower_cruise_solver_hits_the_requested_time(model, long_segment):
 
 
 def test_unreachable_targets_return_none(model, long_segment):
-    """Faster than flat out is impossible, and must not silently return the
-    nearest achievable strategy."""
     traction, brake = model
     v = traction.spec.max_speed_ms
     flat = evaluate(traction, brake, long_segment.distance_m, speed_limit_ms=v,
@@ -125,13 +113,9 @@ def test_coasting_actually_coasts(model, long_segment):
     assert 0.0 < s.coast_start_m < long_segment.distance_m
 
 
-# ------------------------------------------------------------ stalled runs
 
 def test_coasting_from_too_early_raises_rather_than_grinding(model, long_segment):
-    """Coast from the first metre and resistance stops the train long before
-    the platform. The solver used to integrate two million steps -- twenty-two
-    seconds -- and then report a convergence failure, which named the
-    integrator rather than the cause."""
+    """Coast from the first metre and resistance stops the train long before."""
     traction, brake = model
     with pytest.raises(StalledRun, match="coast onset"):
         simulate_segment(traction, brake, long_segment.distance_m,
@@ -140,8 +124,7 @@ def test_coasting_from_too_early_raises_rather_than_grinding(model, long_segment
 
 
 def test_an_unclimbable_gradient_raises(model, long_segment):
-    """The other way to stall: not enough tractive effort at rest. 200 per-mille
-    is far beyond anything adhesion rail does, which is the point."""
+    """The other way to stall: not enough tractive effort at rest. 200 per-mille."""
     traction, brake = model
     with pytest.raises(StalledRun, match="gradient"):
         simulate_segment(traction, brake, long_segment.distance_m,
@@ -150,9 +133,7 @@ def test_an_unclimbable_gradient_raises(model, long_segment):
 
 
 def test_the_stall_is_reported_quickly(model, long_segment):
-    """A guard that takes as long as the step budget it replaces is no guard.
-    The bound is loose; the failure it catches was three orders of magnitude
-    slower."""
+    """A guard that takes as long as the step budget it replaces is no guard."""
     import time
 
     traction, brake = model
@@ -165,9 +146,6 @@ def test_the_stall_is_reported_quickly(model, long_segment):
 
 
 def test_the_solver_lower_bound_never_stalls(model):
-    """solve_coast_for_time probes 5 percent of the distance to bracket its
-    search. If any real segment stalled there the solver would raise instead
-    of returning None, so this is what makes that bound safe."""
     traction, brake = model
     for seg in load_segments():
         simulate_segment(traction, brake, seg.distance_m,
@@ -176,8 +154,6 @@ def test_the_solver_lower_bound_never_stalls(model):
 
 
 def test_gradients_the_line_actually_has_do_not_stall(model, long_segment):
-    """34 per-mille is the published maximum, between Tabata and
-    Nishi-Nippori. Nothing near it should trip the guard."""
     traction, brake = model
     for grade in (-34.0, -20.0, 0.0, 20.0, 34.0, 60.0):
         r = simulate_segment(traction, brake, long_segment.distance_m,
@@ -186,7 +162,6 @@ def test_gradients_the_line_actually_has_do_not_stall(model, long_segment):
         assert r.run_time_s > 0.0
 
 
-# ---------------------------------------------------------- loop geometry
 
 @pytest.fixture(scope="module")
 def geom():
@@ -228,7 +203,6 @@ def test_closed_path_repeats_the_first_station(geom):
     assert lon[0] == lon[-1]
 
 
-# --------------------------------------------------------------- circuit
 
 def test_circuit_totals_are_consistent(model):
     traction, brake = model
@@ -266,7 +240,6 @@ def test_circuit_sample_wraps(model):
     assert a["distance_m"] == pytest.approx(b["distance_m"])
 
 
-# ------------------------------------------------------- rail conditions
 
 def test_worse_rail_lowers_the_adhesion_ceiling():
     ceilings = [CONDITIONS[k].max_braking_ms2(0.0)
@@ -275,8 +248,7 @@ def test_worse_rail_lowers_the_adhesion_ceiling():
 
 
 def test_only_the_worst_condition_limits_braking():
-    """The asymmetry the module exists to show: rail condition barely touches
-    a 4.2 km/h/s service rate until the surface is genuinely contaminated."""
+    """The asymmetry the module exists to show: rail condition barely touches."""
     service = 4.2 / 3.6
     assert not CONDITIONS["dry"].is_adhesion_limited(service)
     assert not CONDITIONS["damp"].is_adhesion_limited(service)

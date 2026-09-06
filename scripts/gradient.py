@@ -1,22 +1,4 @@
-"""Bounding study: how much can the flat-track assumption cost?
-
-Every result assumes level track, justified by the line being near-flat and the
-loop being closed, so gravitational work cancels. That is an assertion. This
-turns it into a number.
-
-The gradient profile used here is derived from ground elevation and overstates
-real track gradient, because railways are built not to follow terrain. That
-makes it useless as an input and ideal as a bound: if run times barely move
-under gradients this exaggerated, the flat assumption is safe.
-
-Two effects separate. Gravitational work is conservative and cancels exactly
-over a closed loop. Time and energy do not, because the dynamics are
-asymmetric: climbing is power-limited so it costs more time than the matching
-descent returns, and on a descent the brakes fight gravity as well as momentum.
-
-So a graded circuit should come out slower and thirstier than a flat one in
-both directions, even with zero net climb.
-"""
+"""Bounding study: how much can the flat-track assumption cost?"""
 
 from __future__ import annotations
 
@@ -42,12 +24,7 @@ graded_segments = load_segments(gradients=True)
 
 
 def brake_for(grade_permille: float) -> BrakeProfile:
-    """Braking adjusted for gradient.
-
-    On a downgrade gravity opposes the brakes, so the achievable net
-    deceleration falls. Ignoring this would understate stopping distance on
-    exactly the segments the study is about.
-    """
+    """Braking adjusted for gradient."""
     adjusted = brake.a_max + G * (grade_permille / 1000.0)
     return BrakeProfile(a_max=max(adjusted, 0.15), jerk=brake.jerk)
 
@@ -79,7 +56,6 @@ print("  The derived average there is -18.8‰, descending outer-loop: below the
 print("  published local maximum, as a segment average should be, and in the")
 print("  direction the terrain implies. The profile is tracking real topography.")
 
-# ------------------------------------------------------------- per segment
 print()
 print("=" * 80)
 print("PER-SEGMENT EFFECT  (outer loop)")
@@ -108,7 +84,6 @@ for fs, gs in zip(flat_segments, graded_segments):
 print()
 print(f"  largest single-segment shift: {worst[0]} at {worst[1]:+.1f} s")
 
-# ------------------------------------------------------------ both directions
 print()
 print("=" * 80)
 print("CIRCUIT TOTALS  --  does it cancel?")

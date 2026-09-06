@@ -1,16 +1,4 @@
-"""Entry guard shared by the scripts.
-
-Running a script with the system interpreter fails with a bare
-`ModuleNotFoundError: No module named 'tokyoline'`, which says nothing about the
-cause. The package lives in the project virtual environment, so the fix is
-always the same and the error should say so.
-
-Two things happen here: `src/` goes on sys.path so the scripts work from a
-checkout without pip-installing, and if the import still fails the error is
-turned into an instruction naming the exact command to use.
-
-Call `ensure()` as the first statement of every script.
-"""
+"""Entry guard shared by the scripts."""
 
 from __future__ import annotations
 
@@ -37,17 +25,7 @@ def _relative(path: Path) -> str:
 
 
 def _force_utf8_stdout() -> None:
-    """Make stdout UTF-8 regardless of the console code page.
-
-    The scripts print Japanese terms (基準運転時分, 回生率) and the per-mille
-    sign. On Windows, Python picks the locale encoding for stdout, which is
-    cp1252 when output is redirected to a file or a pipe — and cp1252 cannot
-    represent any of those characters, so the script dies with a
-    UnicodeEncodeError partway through printing a table.
-
-    Reconfiguring here fixes every script at once, since they all call
-    ensure() before doing anything else.
-    """
+    """Make stdout UTF-8 regardless of the console code page."""
     for stream in (sys.stdout, sys.stderr):
         # Already detached, or replaced by something without reconfigure.
         with contextlib.suppress(AttributeError, ValueError):
@@ -55,23 +33,7 @@ def _force_utf8_stdout() -> None:
 
 
 def ensure(extra: tuple[str, ...] = (), *, streamlit_app: str | None = None) -> None:
-    """Make the package importable, or explain clearly why it is not.
-
-    Parameters
-    ----------
-    extra : additional module names to verify, beyond the package itself.
-        Used by the GUI, which needs plotly -- a dependency the system
-        interpreter may well be missing even when streamlit itself is present.
-    streamlit_app : when set, the suggested command becomes a streamlit
-        invocation rather than a plain script run.
-
-    The streamlit case is worth handling separately because its failure mode is
-    genuinely confusing: `python -m streamlit run app.py` succeeds in launching
-    the server if streamlit happens to be installed system-wide, and only then
-    fails inside the app on some other import. The traceback appears in the
-    browser, points at a line in app.py, and gives no hint that the interpreter
-    is the problem.
-    """
+    """Make the package importable, or explain clearly why it is not."""
     _force_utf8_stdout()
 
     if SRC.is_dir() and str(SRC) not in sys.path:
@@ -138,14 +100,12 @@ def ensure(extra: tuple[str, ...] = (), *, streamlit_app: str | None = None) -> 
     message = "\n".join(lines)
     print(message, file=sys.stderr)
 
-    # Under streamlit the process is the server, and raising SystemExit here
-    # would leave the browser showing a bare traceback with the real
-    # explanation buried in the terminal. Put it on the page instead.
+    # Under streamlit the process is the server.
     if streamlit_app and "streamlit" in sys.modules:
         try:
             import streamlit as st
 
-            st.error("Wrong Python interpreter — dependencies are missing.")
+            st.error("Wrong Python interpreter: dependencies are missing.")
             st.code(command, language="bash")
             st.caption(
                 f"Cannot import '{missing}'. You are running {running}, but this "

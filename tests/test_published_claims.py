@@ -1,16 +1,4 @@
-"""Guard the numbers the README states publicly.
-
-Unlike the property tests these pin specific values, because the README makes
-quantitative claims to a reader who cannot run the code. They should fail
-loudly when the model moves rather than drift out of date.
-
-A failure is not necessarily a bug: the model may have improved and the README
-may need updating. What it must never mean is that the published numbers are
-wrong and nobody noticed.
-
-Tolerances are wide enough for integration noise and narrow enough to catch a
-real change.
-"""
+"""Guard the numbers the README states publicly."""
 
 from __future__ import annotations
 
@@ -69,10 +57,7 @@ def test_standard_run_time_is_2390_s(runs):
 
 
 def test_implied_dwell_is_39_to_50_seconds(runs):
-    """README: 'Implied mean station dwell is 39-50 s'.
-
-    The range spans two braking assumptions and margins from 3 to 10 percent.
-    """
+    """README: 'Implied mean station dwell is 39-50 s'."""
     traction, brake, segments, _ = runs
     d = decompose(traction, brake, segments, dwell_s=DWELL_SCENARIO_S,
                   published_loop_s=PUBLISHED_CIRCUIT_S, line_speed_kmh=90.0)
@@ -86,8 +71,7 @@ def test_implied_dwell_is_39_to_50_seconds(runs):
 
 
 def test_zero_margin_dwell_bound_is_51_9_s(runs):
-    """README: 'A mean dwell of 51.9 s or more would imply no recovery
-    margin at all'."""
+    """README: 'A mean dwell of 51.9 s or more would imply no recovery."""
     traction, brake, segments, _ = runs
     d = decompose(traction, brake, segments, dwell_s=DWELL_SCENARIO_S,
                   published_loop_s=PUBLISHED_CIRCUIT_S, line_speed_kmh=90.0)
@@ -129,15 +113,7 @@ def test_platform_error_is_zero(runs):
 
 
 def test_distance_rounding_is_worth_about_one_second_over_the_loop(runs):
-    """README: published kilometrage is stated to 0.1 km, and the resulting
-    uncertainty on the circuit minimum is under a second.
-
-    It stays that small because the loop is closed. Each station position
-    appears in two segments with opposite sign, so its rounding error largely
-    cancels; only the residual survives. If a change ever broke that structure
-    -- distances read independently per segment rather than differenced from
-    cumulative kilometrage -- the spread would grow by a factor of about the
-    square root of thirty, and this would catch it."""
+    """README: published kilometrage is stated to 0.1 km, and the resulting."""
     traction, brake, segments, _ = runs
     distances = np.array([s.distance_m for s in segments])
     cumulative = np.concatenate([[0.0], np.cumsum(distances)])[:-1]
@@ -160,9 +136,7 @@ def test_distance_rounding_is_worth_about_one_second_over_the_loop(runs):
 
 
 def test_fifty_metres_is_worth_two_to_three_seconds_on_one_segment(runs):
-    """The other half of the same finding, and the reason per-segment results
-    carry no claim: a single segment has no cancelling partner, so the same
-    50 m of rounding lands whole."""
+    """The other half of the same finding, and the reason per-segment results."""
     traction, brake, _, _ = runs
     for distance in (500.0, 1200.0, 2000.0):
         pair = [
@@ -175,8 +149,7 @@ def test_fifty_metres_is_worth_two_to_three_seconds_on_one_segment(runs):
 
 
 def test_input_rounding_dominates_integration_error(runs):
-    """The claim that justifies stopping at dt = 0.1 s. Refining the step buys
-    nothing while the input is known only to 50 m."""
+    """The claim that justifies stopping at dt = 0.1 s. Refining the step buys."""
     traction, brake, segments, _ = runs
     coarse = sum(
         simulate_segment(traction, brake, s.distance_m,
@@ -195,11 +168,7 @@ def test_input_rounding_dominates_integration_error(runs):
 
 
 def test_eleven_of_thirty_segments_never_reach_line_speed(runs):
-    """README: a speed restriction costs nothing where the train would not have
-    reached it, and on a third of the line it would not have.
-
-    Those segments are short enough that the train is still accelerating when
-    it must start braking, so the peak is set by the distance."""
+    """README: a speed restriction costs nothing where the train would not have."""
     *_, results = runs
     below = [r for r in results if not r.reached_line_speed]
     assert len(below) == 11
@@ -207,12 +176,6 @@ def test_eleven_of_thirty_segments_never_reach_line_speed(runs):
 
 
 def test_a_51_kmh_line_wide_cap_would_absorb_the_whole_residual(runs):
-    """README: restrictions alone could explain the 598 s residual only under
-    a line-wide cap 43 percent below the published 90 km/h line speed.
-
-    The bound works because run time falls strictly with the speed limit, so a
-    uniform cap is an upper bound on any set of per-segment restrictions no
-    lower than it."""
     traction, brake, segments, _ = runs
 
     def circuit(cap_kmh):
@@ -234,8 +197,6 @@ def test_a_51_kmh_line_wide_cap_would_absorb_the_whole_residual(runs):
 
 
 def test_a_severe_75_kmh_cap_accounts_for_a_seventh_of_the_residual(runs):
-    """README: the realistic order of the restriction effect. Stated so the
-    bound is not read as a claim that restrictions are large."""
     traction, brake, segments, _ = runs
     cost = sum(
         simulate_segment(traction, brake, s.distance_m,
@@ -246,14 +207,7 @@ def test_a_severe_75_kmh_cap_accounts_for_a_seventh_of_the_residual(runs):
 
 
 def test_load_moves_implied_dwell_by_under_four_seconds():
-    """README: passenger load moves implied dwell by 3.7 s across the whole
-    plausible range, and lighter trains imply MORE dwell, not less.
-
-    The direction matters more than the size. Every headline figure assumes
-    100 percent of published capacity while the published loop time it is
-    compared against is the mean of all services, most of them far lighter. So
-    the reported dwell is, if anything, understated -- the bias runs against
-    the result rather than toward it."""
+    """README: passenger load moves implied dwell by 3.7 s across the whole."""
     segments = load_segments()
     implied = {}
     for load in (0.0, 1.0, 1.6):
@@ -276,8 +230,7 @@ def test_e7_stops_in_5670_m_from_275_kmh():
 
 
 def test_constant_rate_assumption_understates_the_e7_stop_by_30_percent():
-    """README: 'assuming the low-speed rate throughout gives 3,943 m,
-    understating by 30%'."""
+    """README: 'assuming the low-speed rate throughout gives 3,943 m,."""
     from tokyoline import BrakeProfile
 
     e7 = load_fleet()["E7"]

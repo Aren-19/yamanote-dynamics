@@ -13,7 +13,7 @@ can be made to measure.
 
 Simulating all 30 interstation segments from published rolling stock
 specifications gives a **minimum circuit time of 2,309 s**. The published
-circuit time is **3,948 s** — a gap of 42%.
+circuit time is **3,948 s**, a gap of 42%.
 
 That gap is not a recovery-margin measurement. It is dominated by station
 dwell, which JR East does not publish. Circuit time = run time + margin +
@@ -26,11 +26,11 @@ instead gives:
 
 | Assumed margin | Implied mean dwell |
 |---|---|
-| 3% | 45–50 s |
-| 5% | 43–48 s |
-| 10% | 39–44 s |
+| 3% | 45-50 s |
+| 5% | 43-48 s |
+| 10% | 39-44 s |
 
-**Implied mean station dwell is 39–50 s.** The estimate is well-conditioned:
+**Implied mean station dwell is 39-50 s.** The estimate is well-conditioned:
 physics error enters multiplied by the run time (2,390 s) while dwell is
 multiplied by 30 stations, so a 5% physics error moves it by about 4 s.
 
@@ -113,7 +113,7 @@ do.
 | Effective mass | `m_eff = m(1 + λ)`, λ ≈ 0.08 |
 | Running resistance | `R(v) = A + Bv + Cv²` |
 | Tractive effort | `F(v) = min(F_max, P/v, μ(v)·m_adh·g)` |
-| Adhesion | `μ(v) = 0.161 + 7.5/(v_kmh + 44)` (Curtius–Kniffler) |
+| Adhesion | `μ(v) = 0.161 + 7.5/(v_kmh + 44)` (Curtius-Kniffler) |
 | Jerk-limited stop | `T = v₀/a_max + a_max/j` |
 | Ramp-out (closed form) | `t = a/j`, `d = a³/6j²` |
 | Energy balance | `E_traction = E_resistance + E_brake + E_grade` |
@@ -122,7 +122,7 @@ Fixed-step RK4 with explicit control-phase switching; bisection for root
 finding; closed-form braking. scipy is not a dependency.
 
 The brake application point is found by intersecting the forward run curve
-with a brake curve solved backwards from rest at the platform — a forward-only
+with a brake curve solved backwards from rest at the platform: a forward-only
 solver overshoots.
 
 ### Numerical validation
@@ -132,10 +132,10 @@ solver overshoots.
 | Final position error | 0.0 m on all 30 segments |
 | Circuit time convergence | 8 ms across dt = 0.5 → 0.005 s |
 | Energy balance residual | 9.8 × 10⁻⁴ worst case, first order in dt |
-| Distance rounding | ±0.8 s (1σ) on the circuit, ±2–3 s per segment |
+| Distance rounding | ±0.8 s (1σ) on the circuit, ±2-3 s per segment |
 
 The energy balance is a real test. Both sides are computed independently, so
-it can fail — and did, at 7.3%, on a genuine bug. The gravitational term was
+it can fail, and did, at 7.3%, on a genuine bug. The gravitational term was
 added after the identity turned out to fail by up to 104% on a graded segment
 while holding exactly on level track, the only regime it had been tested in.
 
@@ -144,7 +144,7 @@ Precision is limited by the input, not the integrator. Published kilometrage
 rounding. Sampling across that interval moves the circuit minimum by 0.83 s
 (1σ), about 17,000× the step-size error at dt = 0.1 s. The closed loop absorbs
 it, because each position appears in two segments with opposite sign. A single
-segment has no cancelling partner, and 50 m is worth 2–3 s there — a second
+segment has no cancelling partner, and 50 m is worth 2-3 s there: a second
 reason, alongside the minute-rounded timetable, that no per-segment claim is
 supported.
 
@@ -152,14 +152,14 @@ supported.
 
 **Energy.** 92% of traction work is dissipated in braking, which is what 30
 stops in 34.5 km costs. Net consumption is 1.82 kWh per car-km, below the
-published 2–4 heavy-metro band. That exposes a conflict: matching JR East's
+published 2-4 heavy-metro band. That exposes a conflict: matching JR East's
 回生率 of 59.0% needs a regeneration receptivity around 0.76, while the energy
-band needs 0.3–0.5. Two published anchors disagree about the same unpublished
+band needs 0.3-0.5. Two published anchors disagree about the same unpublished
 parameter. Recorded, not resolved.
 
-**Coasting.** The energy-minimal profile is accelerate–cruise–coast–brake, so
+**Coasting.** The energy-minimal profile is accelerate-cruise-coast-brake, so
 with the shape fixed the strategy is one parameter. At equal run time coasting
-beats simply cruising slower by 3–4%. Allowing 10% more run time cuts energy by
+beats simply cruising slower by 3-4%. Allowing 10% more run time cuts energy by
 about a third: the shape of the Pareto front matters more than where you sit on
 it.
 
@@ -172,7 +172,7 @@ unsafe for any per-segment claim.
 turnout and signal limits are not published. Run time falls strictly with the
 speed limit, so a uniform cap bounds any set of per-segment restrictions above
 it. A severe line-wide 75 km/h cap costs 85 s, 14% of the residual, and
-absorbing the whole 598 s would take 51 km/h — 43% below the published line
+absorbing the whole 598 s would take 51 km/h, 43% below the published line
 speed. At circuit level a uniform restriction is indistinguishable from
 recovery margin; the published line speed is what separates them, not the loop
 time. Eleven of 30 segments never reach 90 km/h anyway, the shortest peaking at
@@ -205,7 +205,7 @@ application's Sources tab lists every equation with the module implementing it.
 ## Assumptions and limitations
 
 - Level track. Known false on one segment; bounded above.
-- No signal or ATC restrictions modelled — not public, and the largest
+- No signal or ATC restrictions modelled: not public, and the largest
   unmodelled contributor to run time.
 - Dry rail, no wind. Published deceleration treated as a net rate.
 - One-hour power rating rather than short-term overload, which makes the model

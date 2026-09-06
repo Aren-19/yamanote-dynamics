@@ -1,17 +1,4 @@
-"""Measure station dwell from ODPT real-time train positions.
-
-    python scripts/measure_dwell.py                 # 3 minute sample
-    python scripts/measure_dwell.py 600             # 10 minute sample
-    python scripts/measure_dwell.py 600 --replay f  # re-analyse a saved sample
-
-Set ODPT_CONSUMER_KEY to measure the Yamanote. Without a key this falls back to
-the unauthenticated mirror, which carries Toei but no JR East: useful for
-exercising the pipeline, useless for the actual question.
-
-Timing matters. Tokyo is UTC+9 and the Yamanote runs roughly 04:30-01:00 JST.
-Sampling outside service hours gives episodes of parked trains, which are not
-dwells, and the script warns when the feed looks out of service.
-"""
+"""Measure station dwell from ODPT real-time train positions."""
 
 from __future__ import annotations
 

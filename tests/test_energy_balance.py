@@ -1,22 +1,4 @@
-"""The energy balance across every driving regime.
-
-A segment starts and ends at rest, so the kinetic term drops out and
-
-    E_traction = E_resistance + E_brake_system + E_grade
-
-must hold. Both sides are computed independently, so this tests the accounting
-rather than restating it.
-
-The identity was written without the gravitational term and tested only on
-level track, where that term is zero. On a gradient it failed by up to 104
-percent, from three separate omissions: gravitational work was not counted at
-all; the brake system was credited with the whole commanded deceleration when
-uphill gravity supplies part of it and downhill opposes it; and holding speed
-on a descent needs braking, which the cruise phase recorded as no force.
-
-The failure changing sign between climb and descent is what found the last two.
-These tests exist so it cannot happen again quietly.
-"""
+"""The energy balance across every driving regime."""
 
 from __future__ import annotations
 
@@ -63,8 +45,7 @@ def test_balance_holds_climbing(setup, grade):
 
 @pytest.mark.parametrize("grade", [-2.0, -5.0, -10.0, -20.0, -34.0])
 def test_balance_holds_descending(setup, grade):
-    """Descents were the worst case: braking to hold speed downhill was
-    recorded as no force at all."""
+    """Descents were the worst case: braking to hold speed downhill was."""
     b = balance(setup, grade_permille=grade)
     assert b.balance_error_fraction < TOLERANCE
     assert b.grade_j < 0.0
@@ -98,8 +79,7 @@ def test_climbing_costs_more_traction_than_descending(setup):
 
 
 def test_grade_work_cancels_over_a_closed_loop(setup):
-    """The reason circuit-level results are unaffected by gradient: whatever
-    is climbed is descended."""
+    """The reason circuit-level results are unaffected by gradient: whatever."""
     traction, brake, _ = setup
     total = 0.0
     for i, seg in enumerate(load_segments()):
@@ -110,8 +90,7 @@ def test_grade_work_cancels_over_a_closed_loop(setup):
                              dt=0.1, grade_permille=grade)
         b, _ = segment_energy(r, traction, auxiliary_kw=0.0)
         total += b.grade_j
-    # Segment lengths differ, so this does not cancel to zero exactly; it must
-    # be small against the work of any single climb.
+    # Segment lengths differ, so this does not cancel exactly.
     single = abs(balance(setup, grade_permille=12.0).grade_j)
     assert abs(total) < single
 

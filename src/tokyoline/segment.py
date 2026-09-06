@@ -1,18 +1,4 @@
-"""One segment, solved with fixed-step RK4 and explicit phase switching.
-
-The sequence is accelerate, cruise, optionally coast, brake.
-
-Fixed step rather than an adaptive solver because the hard part is knowing when
-to switch phase, not stiffness. It also makes the convergence study a one-line
-sweep.
-
-The brake application point is where the forward run curve meets a brake curve
-integrated backwards from rest at the platform. The trigger is
-x + distance_to_stop(v) >= L, located by bisection inside the step where it
-first goes true, and the closed-form brake trajectory is attached there. A
-purely forward solver brakes only after overshooting, and the overshoot grows
-with step size.
-"""
+"""One segment, solved with fixed-step RK4 and explicit phase switching."""
 
 from __future__ import annotations
 
@@ -29,13 +15,7 @@ _STALL_SPEED_MS = 1e-6
 
 
 class StalledRun(RuntimeError):
-    """The train stopped short of the platform and cannot start again.
-
-    Two ways in: coasting from so early that resistance stops it before the brake
-    curve, and a gradient too steep to start on. Both are real outcomes rather than
-    solver failures, so they get their own error instead of exhausting the step
-    budget and blaming the integrator.
-    """
+    """The train stopped short of the platform and cannot start again."""
 
 
 class Phase(str, Enum):
@@ -63,8 +43,7 @@ class SegmentResult:
     """Distance by which the train missed the platform. Should be ~1e-9."""
 
     grade_permille: float = 0.0
-    """Gradient the run was solved on, carried so the energy accounting can
-    include gravitational work without the caller having to remember."""
+    """Gradient the run was solved on, carried so the energy accounting can."""
 
     phase_times_s: dict[str, float] = field(default_factory=dict)
     phase_distances_m: dict[str, float] = field(default_factory=dict)
@@ -89,13 +68,7 @@ class SegmentResult:
 
 def _applied_force(traction: TractionModel, v: float, phase: Phase,
                    kinematics: dict) -> float:
-    """Tractive force actually applied in a given control phase, in newtons.
-
-    Recorded so that energy accounting integrates the real force rather than the
-    force available. The distinction only bites during cruise, where the driver
-    throttles back to balance resistance -- and where `effort_n` would report
-    zero, because cruise on this line happens exactly at maximum speed.
-    """
+    """Tractive force actually applied in a given control phase, in newtons."""
     if phase is Phase.ACCEL:
         return traction.effort_n(v)
     if phase is Phase.CRUISE:
@@ -104,12 +77,7 @@ def _applied_force(traction: TractionModel, v: float, phase: Phase,
 
 
 def _rk4_step(x: float, v: float, dt: float, accel_fn) -> tuple[float, float]:
-    """One fixed-step RK4 update of (position, speed).
-
-    `accel_fn(v)` returns acceleration in m/s^2. Acceleration has no explicit
-    position dependence on flat track with a constant speed limit, which is why
-    it takes speed alone.
-    """
+    """One fixed-step RK4 update of (position, speed)."""
     k1v = accel_fn(v)
     k1x = v
 
@@ -139,19 +107,7 @@ def simulate_segment(
     curve_radius_m: float | None = None,
     max_steps: int = 2_000_000,
 ) -> SegmentResult:
-    """Simulate one station-to-station run, from rest to rest.
-
-    `speed_limit_ms` defaults to the train's own maximum; per-segment restrictions
-    from curves, turnouts and signalling are not public for the Yamanote and are
-    not modelled. `dt` is the fixed step in seconds, sensibly 0.01 to 0.1.
-    `coast_start_m` is where power is cut, None for no coasting, and is the single
-    parameter the optimal-driving solver bisects on.
-
-    The run time is a minimum under the stated assumptions: full tractive effort
-    throughout, maximum service braking, no signal restrictions, no driver
-    conservatism, no margin. It is for comparing against a timetable, not for
-    reproducing one.
-    """
+    """Simulate one station-to-station run, from rest to rest."""
     if distance_m <= 0.0:
         raise ValueError("distance_m must be positive")
 
@@ -185,7 +141,6 @@ def simulate_segment(
     v = 0.0
     steps = 0
 
-    # ---- powered / cruising / coasting run, until the brake curve is met ----
     while steps < max_steps:
         coasting = coast_start_m is not None and x >= coast_start_m
 
@@ -200,8 +155,7 @@ def simulate_segment(
             accel_fn = accel_powering
 
         if accel_fn is None:
-            # Cruise: driver holds the limit exactly, so tractive effort matches
-            # resistance and acceleration is zero by construction.
+            # Cruise: effort matches resistance, so acceleration is zero.
             x_new = x + v * dt
             v_new = v
         else:
@@ -209,8 +163,7 @@ def simulate_segment(
             if not coasting and v_new > v_limit:
                 v_new = v_limit
 
-        # Did we cross the brake curve inside this step? Locate it precisely --
-        # this is the forward/backward intersection the whole solver hinges on.
+        # Did we cross the brake curve in this step?
         if brake_trigger(x_new, v_new) >= 0.0:
             lo, hi = 0.0, dt
             for _ in range(60):
@@ -242,11 +195,7 @@ def simulate_segment(
             phases.append(phase)
             break
 
-        # A train at rest with no net force forward will never move again: no
-        # tractive effort is applied while coasting, and on a steep enough
-        # climb there is not enough of it at rest. Either way the loop would
-        # run to max_steps and then report a convergence failure, which
-        # describes the solver rather than the cause.
+        # At rest with no forward force, it never moves again.
         if (accel_fn is not None and v_new < _STALL_SPEED_MS
                 and accel_fn(v_new) <= 0.0):
             cause = (
@@ -274,7 +223,6 @@ def simulate_segment(
     else:
         raise RuntimeError("segment did not converge within max_steps")
 
-    # ---- attach the exact closed-form brake trajectory ----
     traj = brake.trajectory(v, dt=dt)
     # Skip its first sample: it duplicates the state we already recorded.
     for i in range(1, len(traj["t"])):

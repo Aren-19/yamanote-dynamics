@@ -1,13 +1,4 @@
-"""Streamlit application for the Yamanote model.
-
-Two views. LINE carries the departure board, the model against published
-comparison, the 2D map and the animated 3D track view. TECHNICAL carries
-segment profiles, traction curves, the energy breakdown, the coasting Pareto
-front, the validation ladder, parameter provenance and sources.
-
-Launch with launcher.py or run.bat, which starts the server and opens a window.
-`streamlit run app.py` also works.
-"""
+"""Streamlit application for the Yamanote model."""
 
 from __future__ import annotations
 
@@ -15,9 +6,7 @@ import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-# Guard before any project or third-party import, so that launching with the
-# wrong interpreter produces an instruction rather than a traceback in the
-# browser. See scripts/_env.py.
+# Guard before any project import.
 sys.path.insert(0, str(Path(__file__).resolve().parent / "scripts"))
 from _env import ensure
 
@@ -71,11 +60,7 @@ APP_DIR = Path(__file__).resolve().parent
 
 
 def apply_theme() -> None:
-    """Load the application stylesheet.
-
-    Streamlit's stock styling reads as a template, which undercuts the content.
-    Most of assets/theme.css removes its chrome rather than adding decoration.
-    """
+    """Load the application stylesheet."""
     css = (APP_DIR / "assets" / "theme.css").read_text(encoding="utf-8")
     st.markdown(f"<style>{css}</style>", unsafe_allow_html=True)
 
@@ -90,14 +75,11 @@ AXIS = "#D7DEE3"
 M_PER_DEG_LAT = 111_320.0
 
 # The train drawn at true scale is 214 m on a 34.5 km loop, about two pixels.
-# These are the dimensions it is drawn at instead, in metres: long enough to
-# read as a train, wide and tall enough to catch the light.
 TRAIN_VIS_M = 1800.0
 _HALF, _W, _H, _NOSE = TRAIN_VIS_M / 2, 200.0, 26.0, 470.0
 _SHOULDER = _HALF - _NOSE
 
 #: A box body with a tapered nose. Columns are (along track, across, up),
-#: measured from the centre of the train.
 TRAIN_BODY = np.array([
     (-_HALF, -_W, 0.0), (-_HALF, _W, 0.0),         # 0, 1  tail floor
     (-_HALF, _W, _H), (-_HALF, -_W, _H),           # 2, 3  tail roof
@@ -112,8 +94,7 @@ TRAIN_I = [0, 0, 0, 0, 1, 1, 0, 0, 3, 3, 4, 4, 5, 5, 4, 4, 7, 7, 8, 8]
 TRAIN_J = [1, 2, 4, 7, 5, 6, 1, 5, 7, 6, 8, 11, 9, 10, 5, 9, 11, 10, 9, 10]
 TRAIN_K = [2, 3, 7, 3, 6, 2, 5, 4, 6, 2, 11, 7, 10, 6, 9, 8, 10, 6, 10, 11]
 
-#: Pale where slow, deep green where fast. One hue reads as a quantity; a
-#: rainbow reads as decoration.
+#: Pale where slow, deep green where fast.
 SPEED_SCALE = [[0.0, "#DDE9CB"], [0.5, "#9ACD32"], [1.0, "#33691E"]]
 
 
@@ -130,11 +111,7 @@ def play_pause(frame_ms: int) -> list[dict]:
 
 
 def train_mesh(geom, d0: float) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Train body on the track at `d0`, nose pointing along travel.
-
-    Built in metres from the train centre, turned onto the local heading, then
-    converted back to lon/lat.
-    """
+    """Train body on the track at `d0`, nose pointing along travel."""
     lat0, lon0 = geom.position_at(d0)
     lat1, lon1 = geom.position_at(d0 + 5.0)
 
@@ -149,8 +126,7 @@ def train_mesh(geom, d0: float) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     north = along * fy + across * fx
     return (lon0 + east / m_per_deg_lon, lat0 + north / M_PER_DEG_LAT, up)
 
-#: Chart toolbar. Shown always rather than on hover, so "reset axes" is
-#: findable, and double-click resets the view on every chart including 3D.
+#: Chart toolbar, always shown rather than on hover.
 PLOT_CONFIG = {
     "displayModeBar": True,
     "displaylogo": False,
@@ -162,21 +138,12 @@ PLOT_CONFIG = {
 _3D_TYPES = {"scatter3d", "surface", "mesh3d", "cone"}
 
 #: Two roles, two colours, used consistently everywhere a comparison appears.
-#: MATH is what this model computes. PRACTICE is what the railway published —
-#: the real world. Keeping the pairing identical across every chart is what
-#: makes them readable without a legend lookup each time.
 MATH = "#1565C0"
 PRACTICE = "#2E7D32"
 
 
 def paired_comparison(items: list[dict], height: int = 260):
-    """Small multiples: our math against published practice, in real units.
-
-    One panel per quantity, because the quantities have different units and
-    normalising them into a single percentage chart is what made the previous
-    version unreadable — a bar at "-18%" tells you nothing about what 18% of
-    what. Each panel shows both actual values with the numbers on the bars.
-    """
+    """Small multiples: our math against published practice, in real units."""
     fig = make_subplots(
         rows=1, cols=len(items), horizontal_spacing=0.075,
         subplot_titles=[i["label"] for i in items],
@@ -207,22 +174,12 @@ def paired_comparison(items: list[dict], height: int = 260):
 
 
 def divergence_chart(labels, math_cum, practice_cum, height: int = 380):
-    """Cumulative circuit time: physics against the schedule, gap shaded.
-
-    The single most informative comparison in the project. Both curves start
-    together at the origin station and separate steadily — the widening band
-    between them is dwell, recovery margin and driver caution accumulating stop
-    by stop. A pair of totals cannot show that; two curves can.
-    """
-    # Numeric x, with the station names as tick text. A categorical axis would
-    # collapse the two "Shinagawa" entries — origin and loop closure — onto one
-    # position, dragging the final point back to x=0 and folding the fill.
+    """Cumulative circuit time: physics against the schedule, gap shaded."""
+    # Numeric x with station names as tick text.
     xs = list(range(len(labels)))
 
     fig = go.Figure()
-    # Lower curve first: `tonexty` fills to the PREVIOUS trace, so adding the
-    # practice curve second is what shades the band between them rather than
-    # flooding down to the axis.
+    # Lower curve first: tonexty fills to the previous trace.
     fig.add_trace(go.Scatter(
         x=xs, y=math_cum, mode="lines", name="Our math (physics minimum)",
         line=dict(color=MATH, width=2.5),
@@ -249,12 +206,7 @@ def divergence_chart(labels, math_cum, practice_cum, height: int = 380):
 
 
 def chart(fig, height: int | None = None) -> None:
-    """Render a figure in the house style, with a persistent toolbar.
-
-    One place applies the light palette, so individual figures do not each
-    carry their own colours — that drift is what made the previous build look
-    like nineteen unrelated charts.
-    """
+    """Render a figure in the house style, with a persistent toolbar."""
     fig.update_layout(
         paper_bgcolor="#FFFFFF",
         plot_bgcolor="#FFFFFF",
@@ -274,30 +226,26 @@ def chart(fig, height: int | None = None) -> None:
     st.plotly_chart(fig, width="stretch", config=PLOT_CONFIG)
 
 
-#: Operating scenarios. Headway and dwell are MODELLED; the peak congestion
-#: figure is the one MLIT actually publishes, for the outer loop's critical
-#: section. Presenting a scenario rather than five raw sliders is the difference
-#: between a tool and a parameter sandbox -- but the tagging has to survive it,
-#: so every scenario states which of its numbers is published.
+#: Operating scenarios. Headway and dwell are modelled.
 SCENARIOS: dict[str, dict] = {
     "Morning peak": {
-        "window": "07:30–09:00",
+        "window": "07:30-09:00",
         "headway_min": 2.5,
         "crowding_pct": 125,
         "dwell_s": 45.0,
         "crowding_source": "published",
-        "note": "125% is MLIT's measured figure for Ueno→Okachimachi, 07:43–08:43.",
+        "note": "125% is MLIT's measured figure for Ueno→Okachimachi, 07:43-08:43.",
     },
     "Daytime": {
-        "window": "10:00–16:00",
+        "window": "10:00-16:00",
         "headway_min": 4.0,
         "crowding_pct": 60,
         "dwell_s": 32.0,
         "crowding_source": "modelled",
-        "note": "Off-peak loading and dwell are modelled — MLIT measures the peak only.",
+        "note": "Off-peak loading and dwell are modelled: MLIT measures the peak only.",
     },
     "Evening peak": {
-        "window": "17:30–19:30",
+        "window": "17:30-19:30",
         "headway_min": 3.0,
         "crowding_pct": 110,
         "dwell_s": 42.0,
@@ -305,7 +253,7 @@ SCENARIOS: dict[str, dict] = {
         "note": "Evening peak is not separately published; modelled below the morning figure.",
     },
     "Late evening": {
-        "window": "22:00–00:30",
+        "window": "22:00-00:30",
         "headway_min": 5.0,
         "crowding_pct": 45,
         "dwell_s": 28.0,
@@ -322,13 +270,11 @@ PHASE_COLOUR = {
 }
 
 # Degrees of longitude are shorter than degrees of latitude at Tokyo's latitude.
-# Without this the loop is drawn noticeably stretched east-west.
 LAT_DEG_KM = 111.13
 LON_DEG_KM = 90.4
 ASPECT = LAT_DEG_KM / LON_DEG_KM
 
 
-# --------------------------------------------------------------- cached data
 
 
 @st.cache_resource
@@ -338,12 +284,7 @@ def get_fleet():
 
 @st.cache_resource
 def get_spec(cls_key: str = "E235-0"):
-    """Spec for the selected class.
-
-    The Yamanote's own E235 comes from rolling_stock.json, which carries fuller
-    provenance than the comparison fleet file. Other classes are converted from
-    fleet.json.
-    """
+    """Spec for the selected class."""
     if cls_key == "E235-0":
         return load_spec()
     return to_train_spec(get_fleet()[cls_key])
@@ -541,7 +482,6 @@ def fmt_mmss(seconds: float) -> str:
     return f"{s // 60:d}:{s % 60:02d}"
 
 
-# ------------------------------------------------------------------ sidebar
 
 segments = get_segments()
 geom = get_geometry()
@@ -561,17 +501,12 @@ st.sidebar.title("Train")
 _runnable = {k: m for k, m in fleet.items() if simulatable(m)[0]}
 _blocked = {k: simulatable(m)[1] for k, m in fleet.items() if not simulatable(m)[0]}
 
-#: Livery band colour per class — the stripe that identifies the line it works.
+#: Livery band colour per class: the stripe that identifies the line it works.
 LIVERY = {"E235-0": "#9ACD32", "E233-0": "#F15A22"}
 
 
 def train_svg(colour: str) -> str:
-    """Side elevation of a commuter EMU, drawn rather than photographed.
-
-    A schematic: stainless body, livery band, door and window openings, two
-    bogies. It identifies the class at a glance without pulling in a
-    copyrighted photograph.
-    """
+    """Side elevation of a commuter EMU, drawn rather than photographed."""
     win = "".join(
         f'<rect x="{x}" y="17" width="20" height="11" rx="2.5" '
         f'fill="#33414D"/>' for x in (44, 96, 148, 200)
@@ -623,7 +558,7 @@ st.sidebar.caption(
 )
 if cls_key != "E235-0":
     st.sidebar.warning(
-        f"Running the {member.display_name} over Yamanote geometry — a "
+        f"Running the {member.display_name} over Yamanote geometry, a "
         "counterfactual, not an observation. This class does not work this line."
     )
     if member.decel_is_ambiguous:
@@ -633,7 +568,7 @@ if cls_key != "E235-0":
         )
 with st.sidebar.expander(f"{len(_blocked)} classes unavailable"):
     for k, why in _blocked.items():
-        st.markdown(f"**{fleet[k].display_name}** — {why}")
+        st.markdown(f"**{fleet[k].display_name}**: {why}")
 
 st.sidebar.divider()
 st.sidebar.title("Service")
@@ -654,8 +589,7 @@ with st.sidebar.expander("Conditions", expanded=True):
     condition = CONDITIONS[cond_key]
     st.caption(condition.description)
 
-    # Keying on the scenario means changing time of day resets these to that
-    # scenario's values, while still allowing a manual override afterwards.
+    # Keyed on the scenario, so changing time of day resets these.
     crowding_pct = st.slider(
         "Crowding (congestion rate %)", 0, 200, int(scen["crowding_pct"]), 5,
         key=f"crowd_{scenario_name}",
@@ -685,22 +619,22 @@ with st.sidebar.expander("Driving", expanded=True):
 
     jerk = st.slider("Comfort jerk limit (m/s³)", 0.3, 1.2, 0.75, 0.05,
                      help="Modelled. Literature puts the comfortable range for "
-                          "standing passengers at 0.5–1.0 m/s³.")
+                          "standing passengers at 0.5-1.0 m/s³.")
     power_factor = st.slider(
         "Power factor", 0.7, 1.5, 1.0, 0.05,
         help="Multiplier on the published one-hour rating. Leave at 1.0 for the "
-             "headline result — raising it is a sensitivity test, not a fit.")
+             "headline result: raising it is a sensitivity test, not a fit.")
     speed_kmh = st.slider("Speed limit (km/h)", 60.0, 90.0, LINE_SPEED_KMH, 1.0)
     dwell_s = st.slider(
         "Mean dwell (s)", 15.0, 55.0, float(scen["dwell_s"]), 1.0,
         key=f"dwell_{scenario_name}",
-        help="NOT published by JR East. Inferred at 39–50 s — see Validation.")
+        help="NOT published by JR East. Inferred at 39-50 s, see Validation.")
 
 with st.sidebar.expander("Energy", expanded=False):
     receptivity = st.slider(
         "Regen receptivity", 0.0, 1.0, REGEN_RECEPTIVITY, 0.05,
         help="Fraction of returned energy another train actually absorbs. NOT "
-             "published — the least defensible number in the model, and the net "
+             "published: the least defensible number in the model, and the net "
              "result moves by nearly 3x across this range.",
     )
     aux_kw = st.slider(
@@ -729,7 +663,6 @@ st.sidebar.caption(
 )
 
 
-# --------------------------------------------------------------------- views
 
 st.markdown(
     f"""
@@ -753,11 +686,11 @@ with st.expander("Results and limits", expanded=False):
         st.markdown(
             "**Results**\n\n"
             "- Minimum circuit 2,309 s; published 3,948 s.\n"
-            "- Dwell inferred at 39–50 s per station, by constraining recovery "
+            "- Dwell inferred at 39-50 s per station, by constraining recovery "
             "margin to documented MLIT practice.\n"
             "- 92% of traction work is dissipated in braking.\n"
             "- 10% more run time reduces circuit energy by about a third. "
-            "Coasting adds 2–4%."
+            "Coasting adds 2-4%."
         )
     with fb:
         st.markdown(
@@ -778,12 +711,10 @@ with st.expander("Results and limits", expanded=False):
 view_overview, view_analysis = st.tabs(["Line", "Technical"])
 
 # Departures, the comparison and the map/3D all render into the same tab.
-# Re-entering one container with several `with` blocks appends in order, so the
-# three sections merge into a single page without re-indenting their bodies.
 view_board = view_truth = view_net = view_overview
 
 
-# =================================================================== BOARD
+# Departure board.
 
 with view_board:
     rows_b = run_loop(cls_key, load_factor, power_factor, jerk, brake_kmhs,
@@ -793,9 +724,7 @@ with view_board:
     now = datetime.now(timezone(timedelta(hours=9)))
     circuit_s = sum(run_times) + dwell_s * len(run_times)
 
-    # Single header row for the page. Merging the departure board, the
-    # comparison and the map into one view left circuit time and crowding
-    # stated twice; this is the one place they appear.
+    # Single header row for the page.
     extra_t = (load_factor - 1.0) * spec.capacity * spec.passenger_mass_kg / 1000
     b1, b2, b3, b4, b5, b6 = st.columns(6)
     b1.metric("Tokyo time", now.strftime("%H:%M"), scenario_name,
@@ -844,9 +773,7 @@ with view_board:
 
     cls_load, label_load = load_badge(crowding_pct)
 
-    # Departures are anchored to the clock at the modelled headway. The phase is
-    # arbitrary -- there is no published departure phase to align to -- so the
-    # minutes are illustrative of frequency, not of any specific service.
+    # Departures anchored to the clock at the modelled headway.
     head_s = headway_min * 60.0
     base = (now.minute * 60 + now.second)
     first_offset = head_s - (base % head_s)
@@ -854,10 +781,7 @@ with view_board:
     outer_via = "via Shibuya · Shinagawa"
     inner_via = "via Ikebukuro · Ueno"
 
-    # The model runs the circuit faster than the railway schedules it. Scaling
-    # journey times by published/modelled turns a physics minimum into an
-    # estimate calibrated against the one timetable figure published to the
-    # second. Both are shown — the difference IS the operational overhead.
+    # The model runs the circuit faster than the railway schedules it.
     calib = PUBLISHED_LOOP_S / circuit_s if circuit_s > 0 else 1.0
 
     dest_name = segments[dest_idx].from_station
@@ -898,7 +822,7 @@ with view_board:
     with cal2:
         st.markdown(
             f"*Physics minimum* is the model's run time. *Likely* multiplies it "
-            f"by {calib:.2f} — published circuit time "
+            f"by {calib:.2f}, published circuit time "
             f"({fmt_mmss(PUBLISHED_LOOP_S)}) over modelled "
             f"({fmt_mmss(circuit_s)}). That is the only timetable figure "
             "published to the second. The difference between the columns is "
@@ -931,7 +855,7 @@ with view_board:
     st.caption("Green: faster on the outer loop. Blue: faster on the inner loop.")
 
 
-# ============================================================ MODEL VS REALITY
+# Model against reality.
 
 with view_truth:
     st.markdown("##### Physics against the timetable, station by station")
@@ -946,9 +870,7 @@ with view_truth:
         _acc += rt + (dwell_s if i < len(_rt) - 1 else 0.0)
         _math_cum.append(_acc / 60.0)
 
-    # Practice is the published circuit time distributed across segments in
-    # proportion to the model's own run times. The total is real; the split is
-    # an assumption, stated below the chart rather than buried.
+    # Practice is the published total split in proportion to modelled times.
     _scale = PUBLISHED_LOOP_S / _acc if _acc else 1.0
     _prac_cum = [v * _scale for v in _math_cum]
 
@@ -975,9 +897,6 @@ with view_truth:
     model_min = sum(r["run_time_s"] for r in loop_rows)
 
     # Only quantities with a genuine PUBLISHED point value belong on this chart.
-    # Mean dwell is deliberately absent: the model's dwell is a slider set from
-    # our own inference, so charting it against that inference would be circular
-    # and would dress an assumption up as a validation.
     checks = [
         {
             "quantity": "Regeneration rate",
@@ -995,10 +914,6 @@ with view_truth:
         },
     ]
     # Traction power and starting acceleration are deliberately NOT here either.
-    # They are model INPUTS read straight from the published specification, so
-    # comparing them against their own source returns 0% by construction. Two
-    # green bars that can never be anything else would imply validation the
-    # model has not earned.
 
     chart(paired_comparison([
         {"label": "Circuit time", "model": checks[1]["model"],
@@ -1019,7 +934,7 @@ with view_truth:
     st.markdown("##### Energy against a published *range*")
     st.markdown(
         f"Specific consumption is **{per_car:.2f} kWh per car-km** against a "
-        f"published heavy-metro band of **{band_lo:.0f}–{band_hi:.0f}**. "
+        f"published heavy-metro band of **{band_lo:.0f}-{band_hi:.0f}**. "
         + ("That sits inside the band." if inside else
            f"**That sits {'below' if per_car < band_lo else 'above'} the band**, "
            "not inside it.")
@@ -1027,7 +942,7 @@ with view_truth:
     if not inside and per_car < band_lo:
         st.warning(
             f"{100*(1 - per_car/band_lo):.0f}% under the band at the assumed "
-            f"receptivity of {receptivity:.2f}. Receptivity of 0.3–0.5 moves it "
+            f"receptivity of {receptivity:.2f}. Receptivity of 0.3-0.5 moves it "
             "inside; the 回生率 cross-check implies about 0.76. The two "
             "published anchors disagree on the same parameter and this project "
             "does not resolve the conflict."
@@ -1048,8 +963,8 @@ with view_truth:
         st.markdown(
             f"- Circuit time: {model_min:.0f} s modelled against "
             f"{PUBLISHED_LOOP_S} s scheduled.\n"
-            "- Specific energy: 1.82 kWh/car-km against a 2–4 band.\n"
-            "- Coasting: 2–4% saving against 12–15.7% reported by JR East."
+            "- Specific energy: 1.82 kWh/car-km against a 2-4 band.\n"
+            "- Coasting: 2-4% saving against 12-15.7% reported by JR East."
         )
 
     st.markdown(
@@ -1059,7 +974,7 @@ with view_truth:
     )
 
 
-# ======================================================================= NETWORK
+# Network views.
 
 with view_net:
     circuit = run_circuit(cls_key, load_factor, power_factor, jerk, brake_kmhs,
@@ -1067,8 +982,7 @@ with view_net:
     rows = run_loop(cls_key, load_factor, power_factor, jerk, brake_kmhs,
                     speed_kmh, dt)
 
-    # No metric row here: circuit time, crowding, rail and top speed are all
-    # stated in the page header above.
+    # No metric row here; those figures are in the page header.
 
     # Station display data, shared by the live view and the 2D map below.
     board = {r.name_en: r.boardings_2024 for r in ridership.itertuples()}
@@ -1077,7 +991,6 @@ with view_net:
         np.sqrt(b.max()) - np.sqrt(b.min()))
     hover = [f"<b>{n}</b><br>{board[n]:,} boardings/day" for n in geom.names]
 
-    # ---- live 3D track view with synchronised instrument panels ----------
     st.markdown("##### Live run")
 
     N_FRAMES = 200
@@ -1120,11 +1033,10 @@ with view_net:
             "TRACTIVE EFFORT  kN　·　no published curve for this class",
             f"POWER AT THE WHEEL  kW　·　dotted: published "
             f"{traction.power_w/1000:.0f} kW one-hour rating",
-            "RUNNING RESISTANCE  kN　·　modelled — no published value",
+            "RUNNING RESISTANCE  kN　·　modelled, no published value",
         ),
     )
 
-    # --- 3D scene -----------------------------------------------------
     fig3.add_trace(go.Scatter3d(
         x=track_lon, y=track_lat, z=np.zeros_like(track_lat), mode="lines",
         line=dict(color=track_v, colorscale=SPEED_SCALE, width=11,
@@ -1163,10 +1075,7 @@ with view_net:
     ), row=1, col=1)
     TRAIN_TRACE = 3
 
-    # --- instrument panels --------------------------------------------
-    # Reference lines are (value, colour). Their labels live in the subplot
-    # titles, because add_hline cannot be used on a figure that mixes 2D and
-    # 3D subplots -- see the note where they are drawn.
+    # Reference lines are (value, colour); labels live in the subplot titles.
     panels = [
         (1, c_speed, f_v, "#9ACD32", "km/h",
          [(speed_kmh, "#E5484D")]),
@@ -1186,9 +1095,7 @@ with view_net:
             line=dict(color=colour, width=1.6),
             hoverinfo="skip", showlegend=False,
         ), row=row, col=2)
-        # Reference lines are drawn as traces rather than shapes: add_hline
-        # with row/col inspects every trace for an `xaxis` property, which
-        # Scatter3d does not have, and raises on a mixed 3D/2D figure.
+        # Traces rather than shapes: add_hline cannot mix 2D and 3D.
         for value, rcol in refs:
             fig3.add_trace(go.Scatter(
                 x=[float(ct[0]), float(ct[-1])], y=[value, value], mode="lines",
@@ -1270,15 +1177,11 @@ with view_net:
     st.divider()
     left, right = st.columns([3, 2])
 
-    # ---- map -------------------------------------------------------------
     with left:
         dim = st.radio("View", ["2D map", "3D speed profile"], horizontal=True,
                        label_visibility="collapsed")
 
         # Station display data is prepared above, next to the live view.
-        # Major interchanges get bold type, as on the printed diagrams. The
-        # threshold is ridership, so the choice is data-driven rather than a
-        # hand-picked list.
         major_cut = float(np.quantile(b, 0.72))
         _st_df = get_stations()
         jy = dict(zip(_st_df["name_en"], _st_df["jy_number"]))
@@ -1296,9 +1199,7 @@ with view_net:
 
         if dim == "2D map":
             fig = go.Figure()
-            # Transit-diagram styling: one heavy line in the operator's own
-            # colour, with a darker casing beneath so it reads as a route rather
-            # than a plotted series.
+            # Transit-diagram styling.
             fig.add_trace(go.Scatter(
                 x=path_lon, y=path_lat, mode="lines",
                 line=dict(color="#5A8020", width=13), hoverinfo="skip",
@@ -1384,16 +1285,14 @@ with view_net:
 
             fig = go.Figure()
 
-            # Ground trace of the loop, so the speed ribbon reads as height
-            # above a recognisable plan rather than floating in space.
+            # Ground trace, so the speed ribbon reads as height above a plan.
             fig.add_trace(go.Scatter3d(
                 x=path_lon, y=path_lat, z=np.zeros_like(path_lat), mode="lines",
                 line=dict(color="#c3ced9", width=3),
                 name="Ground track", hoverinfo="skip",
             ))
 
-            # Vertical drop lines at each station, drawn as one trace with NaN
-            # breaks rather than 30 separate traces.
+            # Station drop lines, one trace with NaN breaks.
             drop_x, drop_y, drop_z = [], [], []
             for lon_i, lat_i in zip(geom.lon, geom.lat):
                 drop_x += [lon_i, lon_i, None]
@@ -1474,11 +1373,10 @@ with view_net:
             "Station numbers sit inside the symbols; bold names and larger "
             "symbols mark the busiest stations by FY2024 boardings. The red "
             "section is the only part of the line where loading is measured. "
-            "Position between stations is interpolated linearly — a schematic, "
+            "Position between stations is interpolated linearly, a schematic, "
             "not an alignment."
         )
 
-    # ---- schedule --------------------------------------------------------
     with right:
         st.subheader("Circuit schedule")
         st.caption(
@@ -1496,12 +1394,12 @@ with view_net:
         st.dataframe(table, width="stretch", height=460, hide_index=True)
 
         st.divider()
-        st.markdown("**Busiest stations** — published boardings, FY2024")
+        st.markdown("**Busiest stations**: published boardings, FY2024")
         top = ridership.nsmallest(5, "rank_2024")[["name_en", "boardings_2024"]]
         for r in top.itertuples():
             st.progress(
                 float(r.boardings_2024) / float(ridership["boardings_2024"].max()),
-                text=f"{r.name_en} — {r.boardings_2024:,}/day",
+                text=f"{r.name_en}, {r.boardings_2024:,}/day",
             )
 
     st.divider()
@@ -1514,7 +1412,7 @@ with view_net:
             f"**{service_brake_kmhs:.1f} km/h/s** service rate."
         )
         if condition.is_adhesion_limited(service_brake_ms2, 0.0):
-            st.error("Grip is the binding constraint — braking is degraded.")
+            st.error("Grip is the binding constraint: braking is degraded.")
         else:
             st.success("Service brake rate governs; grip is not the constraint.")
         st.caption(
@@ -1542,7 +1440,7 @@ with view_net:
         )
 
 
-# ================================================================== ANALYSIS
+# Technical analysis.
 
 with view_analysis:
     (tab_seg, tab_trac, tab_loop, tab_energy, tab_coast, tab_val,
@@ -1551,7 +1449,6 @@ with view_analysis:
          "Validation", "Provenance", "Sources"]
     )
 
-    # -- Segment -----------------------------------------------------------
     with tab_seg:
         labels = [f"{s.from_station} → {s.to_station} ({s.distance_m:.0f} m)"
                   for s in segments]
@@ -1587,7 +1484,7 @@ with view_analysis:
             ))
         fig.add_hline(y=speed_kmh, line_dash="dot", line_color="grey",
                       annotation_text="speed limit")
-        fig.update_layout(title=f"{r['label']} — speed against distance",
+        fig.update_layout(title=f"{r['label']}, speed against distance",
                           xaxis_title="Distance (m)", yaxis_title="Speed (km/h)",
                           height=420, legend=dict(orientation="h", y=1.12))
         chart(fig)
@@ -1596,13 +1493,12 @@ with view_analysis:
         f2.add_trace(go.Scatter(x=r["t"], y=r["a"], mode="lines",
                                 line=dict(color="#e4572e", width=2)))
         f2.add_hline(y=0, line_color="grey", line_width=1)
-        f2.update_layout(title="Acceleration — the sloped edges are the jerk ramps",
+        f2.update_layout(title="Acceleration: the sloped edges are the jerk ramps",
                          xaxis_title="Time (s)", yaxis_title="a (m/s²)", height=300)
         chart(f2)
 
-    # -- Traction ----------------------------------------------------------
     with tab_trac:
-        st.subheader("Tractive effort — three simultaneous constraints")
+        st.subheader("Tractive effort: three simultaneous constraints")
         st.caption("Delivered effort is the minimum of all three.")
 
         v = np.linspace(0.1, spec.max_speed_ms, 400)
@@ -1639,12 +1535,12 @@ with view_analysis:
             st.warning(
                 f"On {condition.name.lower()} rail the traction adhesion ceiling "
                 f"falls to {adhesion.min()/1000:.0f} kN, below the "
-                f"{traction.max_effort_n/1000:.0f} kN demanded — wheelslip territory."
+                f"{traction.max_effort_n/1000:.0f} kN demanded, wheelslip territory."
             )
         else:
             st.success(
                 f"Traction adhesion never binds: {traction.max_effort_n/1000:.0f} kN "
-                f"demanded against {adhesion.min()/1000:.0f}–{adhesion.max()/1000:.0f} kN "
+                f"demanded against {adhesion.min()/1000:.0f}-{adhesion.max()/1000:.0f} kN "
                 f"available on {condition.name.lower()} rail."
             )
 
@@ -1668,7 +1564,6 @@ with view_analysis:
                          height=340, legend=dict(orientation="h", y=1.15))
         chart(fb)
 
-    # -- Loop --------------------------------------------------------------
     with tab_loop:
         rows = run_loop(cls_key, load_factor, power_factor, jerk, brake_kmhs,
                         speed_kmh, dt)
@@ -1693,7 +1588,6 @@ with view_analysis:
                          yaxis_title="Seconds", height=430, xaxis_tickangle=-60)
         chart(fl)
 
-    # -- Energy ------------------------------------------------------------
     with tab_energy:
         e = run_energy(cls_key, load_factor, power_factor, jerk, brake_kmhs,
                        speed_kmh, dt, dwell_s, receptivity, aux_kw)
@@ -1706,9 +1600,9 @@ with view_analysis:
         e4.metric("Per passenger-km", f"{e['wh_per_pax_km']:.1f} Wh")
 
         st.caption(
-            "Published heavy-metro consumption is typically 2–4 kWh per car-km. "
+            "Published heavy-metro consumption is typically 2-4 kWh per car-km. "
             "That is a range rather than a measurement of this line, so it is a "
-            "weak check — but a figure outside it would be a clear warning."
+            "weak check, but a figure outside it would be a clear warning."
         )
 
         st.subheader("Where the energy goes")
@@ -1792,11 +1686,10 @@ with view_analysis:
         else:
             st.error(
                 f"Balance error {err:.2e} is too large to be discretisation. "
-                "Something is wrong in the accounting — reduce the integration "
+                "Something is wrong in the accounting: reduce the integration "
                 "step to check whether it converges."
             )
 
-    # -- Sources -----------------------------------------------------------
     with tab_src:
         st.subheader("Sources")
 
@@ -1805,33 +1698,33 @@ with view_analysis:
             {"Quantity": "Station sequence, operating distance (営業キロ), 34.5 km total",
              "Source": "Yamanote Line, English Wikipedia",
              "Link": "https://en.wikipedia.org/wiki/Yamanote_Line"},
-            {"Quantity": "Maximum gradient 34‰ (Tabata–Nishi-Nippori), line speed 90 km/h",
+            {"Quantity": "Maximum gradient 34‰ (Tabata-Nishi-Nippori), line speed 90 km/h",
              "Source": "山手線, Japanese Wikipedia",
              "Link": "https://ja.wikipedia.org/wiki/山手線"},
             {"Quantity": "Circuit times: 3,948 s inner mean, 3,937 s outer, 3,840 s fastest, 4,200 s slowest",
              "Source": "Published timetable aggregates, secondary compilation",
              "Link": "https://otoku-info100.com/yamate-round-time241015/"},
             {"Quantity": "Per-segment scheduled times",
-             "Source": "NOT COMMITTED — sources disagreed and appeared column-shifted",
-             "Link": "—"},
+             "Source": "NOT COMMITTED: sources disagreed and appeared column-shifted",
+             "Link": "-"},
         ])
 
         st.markdown("##### Rolling stock")
         st.table([
-            {"Class": "E235-0 — 6M5T, 340.8 t, 1,724 capacity, MT79 140 kW ×24, "
+            {"Class": "E235-0: 6M5T, 340.8 t, 1,724 capacity, MT79 140 kW ×24, "
                       "3.0 / 4.2 km/h/s, 90 km/h",
              "Source": "JR東日本E235系電車, Japanese Wikipedia",
              "Link": "https://ja.wikipedia.org/wiki/JR東日本E235系電車"},
-            {"Class": "E233-0 — 6M4T, 318.8 t, 1,582 capacity, MT75 140 kW, 100 km/h",
+            {"Class": "E233-0: 6M4T, 318.8 t, 1,582 capacity, MT75 140 kW, 100 km/h",
              "Source": "JR東日本E233系電車, Japanese Wikipedia",
              "Link": "https://ja.wikipedia.org/wiki/JR東日本E233系電車"},
-            {"Class": "E5 — 8M2T, 453.5 t, 9,600 kW, 320 km/h, 1.71 km/h/s",
+            {"Class": "E5: 8M2T, 453.5 t, 9,600 kW, 320 km/h, 1.71 km/h/s",
              "Source": "新幹線E5系電車, Japanese Wikipedia",
              "Link": "https://ja.wikipedia.org/wiki/新幹線E5系電車"},
-            {"Class": "E7/W7 — 10M2T, 540 t, 12,000 kW, speed-dependent braking curve",
+            {"Class": "E7/W7: 10M2T, 540 t, 12,000 kW, speed-dependent braking curve",
              "Source": "新幹線E7系・W7系電車, Japanese Wikipedia",
              "Link": "https://ja.wikipedia.org/wiki/新幹線E7系・W7系電車"},
-            {"Class": "N700S — 14M2T, mass bounded < 700 t, 17,080 kW, 2.6 km/h/s",
+            {"Class": "N700S: 14M2T, mass bounded < 700 t, 17,080 kW, 2.6 km/h/s",
              "Source": "新幹線N700S系電車, Japanese Wikipedia",
              "Link": "https://ja.wikipedia.org/wiki/新幹線N700S系電車"},
         ])
@@ -1845,11 +1738,11 @@ with view_analysis:
              "Source": "JR East 各駅の乗車人員 (primary blocks automated access; "
                        "figures via secondary compilation)",
              "Link": "https://www.jreast.co.jp/company/data/passenger/"},
-            {"Quantity": "Peak congestion 125%, Ueno→Okachimachi, 07:43–08:43",
+            {"Quantity": "Peak congestion 125%, Ueno→Okachimachi, 07:43-08:43",
              "Source": "MLIT 都市鉄道の混雑率調査結果 FY2023, via secondary report",
              "Link": "https://ueno.keizai.biz/headline/752/"},
             {"Quantity": "Regeneration rate 59.0% (E235, Yamanote); 47% (E231)",
-             "Source": "JR East, via secondary summary — denominator unverified",
+             "Source": "JR East, via secondary summary, denominator unverified",
              "Link": "https://www.jreast.co.jp/press/2024/20240508_ho01.pdf"},
             {"Quantity": "Optimal-driving energy saving 12% and 15.7%, Yamanote",
              "Source": "JSME 鉄道分野における省エネ技術の研究開発",
@@ -1867,7 +1760,7 @@ with view_analysis:
             {"Data": "Real-time train positions (Toei only; no JR East)",
              "Service": "ODPT public mirror, no key required",
              "Link": "https://api-public.odpt.org/api/v4/odpt:Train"},
-            {"Data": "Real-time train positions, JR East — requires acl:consumerKey",
+            {"Data": "Real-time train positions, JR East, requires acl:consumerKey",
              "Service": "ODPT authenticated API",
              "Link": "https://api.odpt.org/api/v4/odpt:Train"},
         ])
@@ -1901,7 +1794,7 @@ with view_analysis:
              "stock.py"),
             ("Base speed",
              r"v_{\mathrm{base}} = P / F_{\max}", "traction.py"),
-            ("Adhesion (Curtius–Kniffler)",
+            ("Adhesion (Curtius-Kniffler)",
              r"\mu(v) = 0.161 + \frac{7.5}{v_{\mathrm{km/h}} + 44}", "stock.py"),
             ("Jerk-limited stop, trapezoidal time",
              r"T = \frac{v_0}{a_{\max}} + \frac{a_{\max}}{j}", "brake.py"),
@@ -1953,7 +1846,7 @@ with view_analysis:
              "binds on braking only in the leaf-fall case, never on traction"},
             {"Change": "Regeneration receptivity up", "Effect": "Net energy down; "
              "advantage of coasting down, since the two are partial substitutes"},
-            {"Change": "Coast onset later", "Effect": "Run time down, energy up — "
+            {"Change": "Coast onset later", "Effect": "Run time down, energy up, "
              "the trade-off traced by the Pareto front"},
             {"Change": "Assumed dwell up", "Effect": "Implied recovery margin down; "
              "one equation in two unknowns, so they cannot both be free"},
@@ -2009,7 +1902,6 @@ with view_analysis:
             "no data was taken from it."
         )
 
-    # -- Coasting ----------------------------------------------------------
     with tab_coast:
         st.subheader("Energy against run time")
         st.markdown(
@@ -2087,7 +1979,6 @@ with view_analysis:
                 "this optimisation depends on an unpublished parameter."
             )
 
-    # -- Validation --------------------------------------------------------
     with tab_val:
         st.subheader("From theoretical minimum to published timetable")
         v1, v2 = st.columns(2)
@@ -2110,7 +2001,7 @@ with view_analysis:
         ))
         fw.add_hline(y=PUBLISHED_LOOP_S, line_dash="dot", line_color="#e4572e",
                      annotation_text=f"published {PUBLISHED_LOOP_S} s")
-        fw.update_layout(title="Decomposition ladder — each layer is documented practice",
+        fw.update_layout(title="Decomposition ladder: each layer is documented practice",
                          yaxis_title="Cumulative circuit time (s)", height=440,
                          xaxis_tickangle=-20)
         chart(fw)
@@ -2175,7 +2066,7 @@ with view_analysis:
                     "requires no modelling assumption.")
 
         st.divider()
-        st.subheader("Inverted inference — the actual result")
+        st.subheader("Inverted inference: the actual result")
         st.markdown(
             "Margin practice is documented; dwell is not. Fixing margin at "
             "documented levels and solving for dwell runs the inference in the "
@@ -2193,13 +2084,12 @@ with view_analysis:
                           yaxis_title="Implied dwell (s)", height=340)
         chart(fii)
         st.caption(
-            f"Implied dwell spans {min(implied):.1f}–{max(implied):.1f} s. The "
+            f"Implied dwell spans {min(implied):.1f}-{max(implied):.1f} s. The "
             "estimate is well-conditioned because physics error is multiplied by "
             f"run time ({d['standard_run_time_s']:.0f} s) while dwell is "
             "multiplied by 30 stations."
         )
 
-    # -- Provenance --------------------------------------------------------
     with tab_prov:
         st.subheader("Parameter provenance")
         st.markdown(
@@ -2222,7 +2112,7 @@ with view_analysis:
             {"Parameter": "Station kilometrage (営業キロ)", "Status": badge["published"],
              "Source / basis": "JR East operating distance; sums to 34.5 km"},
             {"Parameter": "Formation, mass, capacity", "Status": badge["published"],
-             "Source / basis": "6M5T, 340.8 t, 1,724 — ja.wikipedia E235系"},
+             "Source / basis": "6M5T, 340.8 t, 1,724, ja.wikipedia E235系"},
             {"Parameter": "Traction power", "Status": badge["derived"],
              "Source / basis": "3,360 kW = 6 cars × 4 motors × 140 kW (one-hour rating)"},
             {"Parameter": "Acceleration / deceleration", "Status": badge["published"],
@@ -2231,7 +2121,7 @@ with view_analysis:
              "Source / basis": "No published set for this class. Estimated from "
                                "mass, car count, frontal area. Largest uncertainty."},
             {"Parameter": "Rotational inertia λ", "Status": badge["modelled"],
-             "Source / basis": "0.08, midpoint of the 0.06–0.10 EMU range"},
+             "Source / basis": "0.08, midpoint of the 0.06-0.10 EMU range"},
             {"Parameter": "Comfort jerk limit", "Status": badge["modelled"],
              "Source / basis": "0.75 m/s³, midpoint of literature range"},
             {"Parameter": "Gradient", "Status": badge["not_modelled"],
@@ -2246,7 +2136,7 @@ with view_analysis:
             {"Parameter": "Circuit times", "Status": badge["published"],
              "Source / basis": "3,948 s inner mean; 3,840 s fastest"},
             {"Parameter": "Operator margin practice", "Status": badge["published"],
-             "Source / basis": "MLIT 運行計画 survey — de-rating, round-up, added margin"},
+             "Source / basis": "MLIT 運行計画 survey: de-rating, round-up, added margin"},
             {"Parameter": "Station boardings", "Status": badge["published"],
              "Source / basis": "JR East 各駅の乗車人員, FY2024, all 30 stations"},
             {"Parameter": "Peak congestion", "Status": badge["published"],
@@ -2254,14 +2144,14 @@ with view_analysis:
             {"Parameter": "Segment loading elsewhere", "Status": badge["unknown"],
              "Source / basis": "Needs an OD matrix. Not public. Not invented here."},
             {"Parameter": "Mean dwell", "Status": badge["unknown"],
-             "Source / basis": "Never published. Inferred 39–50 s from margin practice."},
+             "Source / basis": "Never published. Inferred 39-50 s from margin practice."},
             {"Parameter": "Per-segment scheduled times", "Status": badge["published_ambiguous"],
              "Source / basis": "Minute-resolution only; ±30 s swamps the effect"},
             {"Parameter": "Regen receptivity", "Status": badge["modelled"],
              "Source / basis": "0.70 assumed. JR East 回生率 of 59.0% implies ~0.76, "
                                "but the ratio's denominator is unverified."},
             {"Parameter": "N700S formation mass", "Status": badge["bounded"],
-             "Source / basis": "Published only as 'under 700 t' — carried as a bound"},
+             "Source / basis": "Published only as 'under 700 t', carried as a bound"},
         ])
 
         st.divider()
@@ -2275,7 +2165,7 @@ with view_analysis:
                 "- Dry rail, no wind\n"
                 "- Full tractive effort throughout acceleration\n"
                 "- Published deceleration treated as a *net* rate\n"
-                "- One-hour power rating, not short-term overload — this makes "
+                "- One-hour power rating, not short-term overload: this makes "
                 "the model **slower** than reality, so any measured fast bias is "
                 "a lower bound"
             )
@@ -2309,7 +2199,7 @@ with view_analysis:
                   delta_color="off")
         st.caption(
             "The balance is a real test: both sides are computed "
-            "independently. It first failed at 7.3% and found a bug — cruise "
+            "independently. It first failed at 7.3% and found a bug: cruise "
             "force recorded as zero, because effort_n returns zero at maximum "
             "speed, which is where cruise happens here."
         )
@@ -2318,5 +2208,5 @@ with view_analysis:
             "kilometrage is stated to 0.1 km, so each station carries up to "
             "50 m of rounding, 17,000 times the step error at dt = 0.1 s. The "
             "closed loop absorbs it; one segment does not, where 50 m is worth "
-            "2–3 s."
+            "2-3 s."
         )

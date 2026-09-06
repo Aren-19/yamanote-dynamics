@@ -1,21 +1,4 @@
-r"""Launch the Yamanote model as an application.
-
-Starts the Streamlit server on a free port, waits until it is serving, then
-opens it -- in a native window if pywebview is installed, otherwise in the
-browser. Shuts the server down on exit.
-
-A launcher rather than a bundled executable because Streamlit resolves its
-package metadata and static assets at runtime. Freezing it needs --collect-all
-for streamlit, plotly, pyarrow and altair, produces a 400-600 MB binary that
-takes 10-20 s to cold start, and breaks on the next Streamlit release. This
-gets the same double-click behaviour without any of that.
-
-    .venv\Scripts\python.exe launcher.py
-    .venv\Scripts\python.exe launcher.py --browser
-    .venv\Scripts\python.exe launcher.py --port 8600
-
-On Windows, double-click run.bat.
-"""
+"""Launch the Yamanote model as an application."""
 
 from __future__ import annotations
 
@@ -44,12 +27,7 @@ STARTUP_TIMEOUT_S = 90.0
 
 
 def find_free_port(preferred: int | None = None) -> int:
-    """An unused TCP port, preferring `preferred` if it happens to be free.
-
-    Picking a port dynamically means a stale server from a previous run, or a
-    dev server already on 8501, does not turn into a confusing 'address in use'
-    failure or, worse, a window showing someone else's app.
-    """
+    """An unused TCP port, preferring `preferred` if it happens to be free."""
     if preferred:
         with socket.socket() as s:
             try:
@@ -63,26 +41,14 @@ def find_free_port(preferred: int | None = None) -> int:
 
 
 def interpreter() -> Path:
-    """The interpreter to run Streamlit with.
-
-    Prefers the project venv. Falls back to whatever is running this file, which
-    is correct when the user has already activated the environment.
-    """
+    """The interpreter to run Streamlit with."""
     if VENV_PY.exists():
         return VENV_PY
     return Path(sys.executable)
 
 
 class LogDrain:
-    """Continuously drain a child process's output on a background thread.
-
-    This is not optional bookkeeping — it is required for correctness. A piped
-    stdout that nobody reads fills the OS pipe buffer (tens of kilobytes), at
-    which point the child BLOCKS on its next write. Streamlit logs while it
-    serves, so the symptom is an app that renders its first screen and then
-    freezes partway through, with no error anywhere. Draining on a thread keeps
-    the child running while still retaining recent output for diagnostics.
-    """
+    """Continuously drain a child process's output on a background thread."""
 
     def __init__(self, proc: subprocess.Popen, keep: int = 400) -> None:
         self._lines: deque[str] = deque(maxlen=keep)
@@ -103,8 +69,7 @@ def start_server(port: int) -> tuple[subprocess.Popen, LogDrain]:
     cmd = [
         str(interpreter()), "-m", "streamlit", "run", str(APP),
         "--server.port", str(port),
-        # Loopback only. Streamlit otherwise binds every interface, which puts
-        # a desktop app on the local network.
+        # Loopback only; Streamlit otherwise binds every interface.
         "--server.address", "127.0.0.1",
         "--server.headless", "true",
         "--browser.gatherUsageStats", "false",
@@ -120,12 +85,7 @@ def start_server(port: int) -> tuple[subprocess.Popen, LogDrain]:
 
 
 def wait_until_serving(port: int, proc: subprocess.Popen, log: LogDrain) -> bool:
-    """Poll until the server answers, or it dies, or we give up.
-
-    Polling the actual URL rather than sleeping a fixed interval matters: cold
-    starts vary from about two seconds to twenty depending on whether the
-    dependency imports are warm.
-    """
+    """Poll until the server answers, or it dies, or we give up."""
     url = f"http://localhost:{port}"
     deadline = time.time() + STARTUP_TIMEOUT_S
 
@@ -149,18 +109,13 @@ def wait_until_serving(port: int, proc: subprocess.Popen, log: LogDrain) -> bool
 
 
 def open_window(url: str, prefer_browser: bool, frameless: bool = False) -> None:
-    """Open a native window if pywebview is present, else the browser.
-
-    `frameless` removes the OS title bar entirely. It looks cleaner but takes
-    the close and minimise buttons with it, and this app draws no replacement
-    chrome, so it is off by default rather than a nice-looking trap.
-    """
+    """Open a native window if pywebview is present, else the browser."""
     if not prefer_browser:
         try:
             import webview  # type: ignore
 
             print("  opening desktop window (pywebview)")
-            webview.create_window("Yamanote Line — dynamics model", url,
+            webview.create_window("Yamanote Line dynamics model", url,
                                   width=1520, height=980,
                                   min_size=(1100, 720),
                                   background_color="#0E1419",
@@ -169,7 +124,7 @@ def open_window(url: str, prefer_browser: bool, frameless: bool = False) -> None
             webview.start()
             return
         except ImportError:
-            print("  pywebview not installed — opening in the browser instead.")
+            print("  pywebview not installed, opening in the browser instead.")
             print("  For a native window:  .venv\\Scripts\\python.exe -m pip "
                   "install pywebview")
 
@@ -190,7 +145,7 @@ def main() -> int:
                         help="Force the browser even if pywebview is available.")
     parser.add_argument("--frameless", action="store_true",
                         help="Borderless window. Drops the OS close/minimise "
-                             "buttons — drag anywhere to move, Alt+F4 to close.")
+                             "buttons: drag anywhere to move, Alt+F4 to close.")
     args = parser.parse_args()
 
     if not APP.exists():
@@ -225,7 +180,7 @@ def main() -> int:
         cleanup()
         return 1
 
-    print("  ready — first load runs the full model, allow a few seconds")
+    print("  ready: first load runs the full model, allow a few seconds")
 
     open_window(f"http://localhost:{port}", prefer_browser=args.browser,
                 frameless=args.frameless)

@@ -1,9 +1,4 @@
-"""Sanity checks on the physics core before any validation is attempted.
-
-Everything printed here should be checked against physical intuition or a
-published figure. If any of it looks wrong, the validation result downstream is
-meaningless.
-"""
+"""Sanity checks on the physics core before any validation is attempted."""
 
 from __future__ import annotations
 

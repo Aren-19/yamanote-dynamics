@@ -1,25 +1,4 @@
-"""Measuring station dwell from ODPT real-time train positions.
-
-Dwell is the one quantity the project needs and cannot derive, so it is
-otherwise inferred from documented margin practice. This is the path to
-measuring it instead.
-
-The odpt:Train feed reports fromStation and toStation. Checked against the live
-feed: toStation is null exactly when a train is standing at a platform, with
-fromStation naming it. A dwell is a contiguous run of samples with no
-toStation.
-
-Polling makes every measurement interval-censored, and it stays that way. A
-train first seen standing at t1 and last at t2 gives a dwell of at least
-t2 - t1, and at most the gap between the last and next samples showing it
-running. A midpoint would overstate the precision, so both bounds are carried
-through.
-
-JR East data needs a registered consumer key. The unauthenticated mirror
-carries only some operators and no JR East, so the Yamanote cannot be measured
-without one. It still exercises this pipeline against real live data, which
-beats synthetic fixtures.
-"""
+"""Measuring station dwell from ODPT real-time train positions."""
 
 from __future__ import annotations
 
@@ -47,11 +26,7 @@ class OdptError(RuntimeError):
 
 @dataclass
 class OdptClient:
-    """Minimal ODPT client.
-
-    Falls back to the unauthenticated mirror when no key is configured, so the
-    pipeline is runnable either way -- just against different operators.
-    """
+    """Minimal ODPT client."""
 
     consumer_key: str | None = None
     timeout_s: float = 45.0
@@ -94,7 +69,6 @@ class OdptClient:
                     "real-time data is not on the unauthenticated mirror."
                 ) from exc
             # `endpoint`, not `url`: the query string carries the consumer key,
-            # and this message reaches the console and any traceback.
             raise OdptError(f"HTTP {exc.code} from {endpoint}: {body}") from exc
 
 
@@ -141,13 +115,7 @@ class DwellEpisode:
 
     @property
     def upper_bound_s(self) -> float | None:
-        """Longest dwell consistent with the observations.
-
-        None when the episode is not bracketed by running observations on both
-        sides -- an episode that was already in progress when sampling started,
-        or still in progress when it stopped, is censored open-ended and must
-        not be counted.
-        """
+        """Longest dwell consistent with the observations."""
         if self.prev_running_t is None or self.next_running_t is None:
             return None
         return self.next_running_t - self.prev_running_t
@@ -253,13 +221,7 @@ def aggregate(episodes: list[DwellEpisode]) -> DwellStats | None:
 
 def collect(client: OdptClient, *, railway: str | None, duration_s: float,
             interval_s: float = 10.0, verbose: bool = True) -> list[Sample]:
-    """Poll the feed for a while and return every observation.
-
-    `interval_s` sets the censoring width: a dwell can only be pinned to within
-    roughly one polling interval on each side, so 10 s sampling bounds a 40 s
-    dwell to about [30, 50] s. Averaging many episodes narrows the mean but not
-    the individual measurements.
-    """
+    """Poll the feed for a while and return every observation."""
     samples: list[Sample] = []
     deadline = time.time() + duration_s
     polls = 0

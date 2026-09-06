@@ -1,8 +1,6 @@
 [theme]
 base = "light"
-# Colour is used sparingly and only where it carries meaning. The accent is a
-# muted green rather than the line's bright uguisu, which is too loud against
-# white for large areas — the bright colour is kept for the route line itself.
+# Muted green accent. The bright uguisu is kept for the route line itself.
 primaryColor = "#2E7D32"
 backgroundColor = "#FFFFFF"
 secondaryBackgroundColor = "#F6F8F9"

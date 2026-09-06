@@ -1,5 +1,5 @@
 @echo off
-REM Yamanote Line dynamics model — double-click to launch.
+REM Yamanote Line dynamics model, double-click to launch.
 REM
 REM Starts the Streamlit server on a free port and opens the app. Uses the
 REM project's virtual environment, so it does not matter what Python is on PATH.

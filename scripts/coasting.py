@@ -34,7 +34,6 @@ print("  Four-phase profile: accelerate -> cruise -> coast -> brake.")
 print("  With the shape fixed, the strategy is ONE number per segment: where")
 print("  coasting starts. Bisect on it to hit a target run time.")
 
-# ------------------------------------------------------- one segment, in detail
 demo = max(segments, key=lambda s: s.distance_m)
 print()
 print("=" * 80)
@@ -58,7 +57,6 @@ for factor in (1.02, 1.05, 1.10, 1.20):
     print(f"  {factor:7.0%} {s.coast_start_m:11.0f} m {s.coast_distance_m:9.0f} m "
           f"{s.run_time_s:7.1f}s {kwh(s.net_energy_j):9.2f}")
 
-# ----------------------------------------------------------------- pareto front
 print()
 print("=" * 80)
 print("PARETO FRONT  --  coasting against simply cruising slower")
@@ -83,7 +81,6 @@ for p in front:
           f"{(f'{100*saving:+.1f}%' if saving is not None else '--'):>10} "
           f"{p.coast.peak_speed_kmh:8.0f}k {p.slower.peak_speed_kmh:9.0f}k")
 
-# ------------------------------------------------- interaction with regeneration
 print()
 print("=" * 80)
 print("COASTING AND REGENERATION ARE PARTIAL SUBSTITUTES")
@@ -107,7 +104,6 @@ for rec in (0.0, 0.3, 0.7, 1.0):
     print(f"  {rec:12.2f} {kwh(c.net_energy_j):11.2f} {kwh(s.net_energy_j):12.2f} "
           f"{100*saving:9.1f}%")
 
-# --------------------------------------------------------------- whole circuit
 print()
 print("=" * 80)
 print("WHOLE CIRCUIT  --  coasting applied to every segment")

@@ -1,24 +1,4 @@
-"""Bounding study: how much can the no-restrictions assumption cost?
-
-The model runs every segment at the 90 km/h line speed. Real drivers do not,
-because curves, turnouts and signalling impose lower limits in specific places.
-None are published for the Yamanote, so none can be modelled. This puts a size
-on what that leaves out.
-
-The lever is monotonicity: run time falls strictly with the speed limit, so a
-uniform cap at C is an upper bound on any set of per-segment restrictions no
-lower than C. Real restrictions apply at particular curves, so the uniform case
-overstates them by construction, which is what makes it a bound.
-
-Two questions follow. How much does a plausible cap cost against the 598 s
-residual margin, and inverted, what cap would restrictions alone have to be to
-explain that residual with no margin at all?
-
-The second answer is uncomfortable and worth stating up front: at circuit level
-a uniform restriction is observationally equivalent to recovery margin. Both add
-time to the same total. What separates them is the published line speed, which
-the required cap would contradict.
-"""
+"""Bounding study: how much can the no-restrictions assumption cost?"""
 
 from __future__ import annotations
 

@@ -1,15 +1,4 @@
-"""Smoke tests for the Streamlit application.
-
-A Streamlit script cannot be imported -- running it is the test -- so these use
-AppTest, which executes the script and exposes its widgets for inspection.
-
-Deliberately few and broad. Each run executes the whole model, so a long suite
-here would dominate CI for little extra signal. They establish that the app
-starts, that its controls change what they claim to, and that nothing raises.
-
-Skipped without the viz extras, so the physics suite still runs on a bare
-`pip install -e ".[dev]"`.
-"""
+"""Smoke tests for the Streamlit application."""
 
 from __future__ import annotations
 
@@ -24,8 +13,7 @@ from streamlit.testing.v1 import AppTest
 
 TIMEOUT = 300
 
-# AppTest resolves a relative path against the file that calls it, which would
-# look for tests/app.py.
+# AppTest resolves relative paths against the calling file.
 ROOT = Path(__file__).resolve().parents[1]
 APP = ROOT / "app.py"
 
@@ -58,15 +46,11 @@ def test_departure_board_and_charts_render(app):
 
 
 def test_the_schedule_is_labelled_as_modelled(app):
-    """The board must never read as a live feed. This is the one claim in the
-    application that would be dishonest if it were dropped."""
     warnings = " ".join(str(w.value) for w in app.warning)
     assert "not a live feed" in warnings
 
 
 def test_class_picker_changes_the_selected_class():
-    """Uses session state and an explicit rerun, so it is worth checking that
-    a click really does switch class rather than merely redraw."""
     at = run_app()
     assert at.session_state["cls_key"] == "E235-0"
 
@@ -78,8 +62,6 @@ def test_class_picker_changes_the_selected_class():
 
 
 def test_time_of_day_changes_headway_and_crowding():
-    """Scenario is the primary control: it must move several parameters at
-    once, not just relabel the header."""
     at = run_app()
     scenario = at.sidebar.selectbox[0]
     assert "Daytime" in scenario.value
@@ -96,8 +78,6 @@ def test_time_of_day_changes_headway_and_crowding():
 
 
 def test_no_metric_label_appears_twice(app):
-    """Merging three views into one page previously left circuit time and
-    crowding stated twice."""
     labels = [m.label for m in app.metric]
     assert len(labels) == len(set(labels)), (
         f"duplicated metric labels: "
@@ -106,7 +86,6 @@ def test_no_metric_label_appears_twice(app):
 
 
 def test_source_does_not_use_removed_streamlit_parameters():
-    """use_container_width was deprecated with a removal date that has passed.
-    Cheap static check, so it stays honest without another app run."""
+    """use_container_width was deprecated with a removal date that has passed."""
     source = APP.read_text(encoding="utf-8")
     assert "use_container_width" not in source

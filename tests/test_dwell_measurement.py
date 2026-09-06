@@ -1,16 +1,4 @@
-"""Tests for the dwell-measurement logic.
-
-Without an ODPT key this cannot run against JR East, so the grouping and
-censoring logic is tested against synthetic sample streams. That is the part
-worth testing anyway: the network client is thin, but deciding which
-observations make a usable measurement is subtle, and getting it wrong produces
-confident numbers from partial evidence.
-
-The rule under test is that an episode counts only if running observations
-bracket it on both sides. One already under way when sampling began, or still
-under way when it ended, has no known duration and is discarded rather than
-counted as a short dwell.
-"""
+"""Tests for the dwell-measurement logic."""
 
 from __future__ import annotations
 
@@ -36,7 +24,6 @@ def stream(train: str, entries: list[tuple[float, str | None, str | None]]):
     ]
 
 
-# --------------------------------------------------------------- utilities
 
 def test_short_station_takes_the_last_segment():
     assert short_station("odpt.Station:JR-East.Yamanote.Shibuya") == "Shibuya"
@@ -50,7 +37,6 @@ def test_standing_is_defined_by_a_missing_destination():
     assert standing.standing
 
 
-# ---------------------------------------------------------------- episodes
 
 def test_bracketed_episode_is_detected_with_both_bounds():
     s = stream("A", [
@@ -72,8 +58,7 @@ def test_bracketed_episode_is_detected_with_both_bounds():
 
 
 def test_episode_open_at_the_start_is_not_counted():
-    """Sampling began with the train already standing, so there is no lower
-    edge to the dwell."""
+    """Sampling began with the train already standing, so there is no lower."""
     s = stream("A", [
         (0.0, "Ueno", None),
         (10.0, "Ueno", None),
@@ -126,8 +111,6 @@ def test_trains_are_tracked_separately():
 
 
 def test_samples_are_sorted_before_grouping():
-    """Poll results can arrive out of order; the grouping must not depend on
-    input order."""
     entries = [
         (30.0, "Okachimachi", "Akihabara"),
         (0.0, "Ueno", "Okachimachi"),
@@ -147,7 +130,6 @@ def test_a_train_never_seen_standing_yields_nothing():
     assert episodes_from_samples(s) == []
 
 
-# --------------------------------------------------------------- aggregate
 
 def test_aggregate_uses_only_bracketed_episodes():
     good = stream("A", [
@@ -171,8 +153,7 @@ def test_aggregate_uses_only_bracketed_episodes():
 
 
 def test_aggregate_returns_none_when_nothing_is_usable():
-    """Parked trains at end of service produce episodes but no measurements.
-    Reporting a number from them would be worse than reporting nothing."""
+    """Parked trains at end of service produce episodes but no measurements."""
     parked = stream("A", [(float(t), "Shibuya", None) for t in range(0, 60, 10)])
     assert aggregate(episodes_from_samples(parked)) is None
 
@@ -209,8 +190,7 @@ def test_bounds_always_bracket_the_truth():
 
 
 def test_http_errors_do_not_leak_the_consumer_key():
-    """The query string carries the key, and this message reaches the console
-    and any traceback. Only the base endpoint may appear in it."""
+    """The query string carries the key, and this message reaches the console."""
     import urllib.error
 
     from tokyoline.odpt import OdptClient, OdptError

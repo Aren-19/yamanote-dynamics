@@ -1,26 +1,4 @@
-"""Simulated minimum run time against the published timetable.
-
-"The simulation is N percent faster than the schedule" means almost nothing,
-because a Japanese timetable is not built up from a theoretical minimum. MLIT's
-survey of operator practice (data/operational_practice.json) describes layers:
-
-    theoretical minimum
-      -> run curve drawn 2-5 km/h below the limit
-      -> rounded up          -> 基準運転時分, standard run time
-      -> margin added        -> 余裕時分
-      -> plus station dwell  -> 停車時分
-      = published timetable
-
-So this builds a ladder rather than a ratio. Each rung is documented practice
-with a source, and only the residual at the top has to be attributed to what
-the model cannot see.
-
-Dwell is not published for the Yamanote. It enters as a scenario parameter, and
-since loop time = run + dwell + margin is one equation in two unknowns, dwell
-and margin are not separately identifiable from the loop total. So the module
-reports the ladder and the full locus of (dwell, margin) pairs that fit the
-published time.
-"""
+"""Simulated minimum run time against the published timetable."""
 
 from __future__ import annotations
 
@@ -93,12 +71,7 @@ class Decomposition:
 
     @property
     def residual_margin_fraction(self) -> float:
-        """Residual margin as a fraction of the standard run time.
-
-        This is the number to compare against documented recovery-margin
-        practice. It is NOT the fraction of total journey time -- dividing by
-        the loop total would dilute it with dwell and understate it.
-        """
+        """Residual margin as a fraction of the standard run time."""
         return self.residual_margin_s / self.standard_run_time_s
 
     def table(self) -> str:
@@ -167,18 +140,7 @@ def decompose(
     round_up_to_s: float = 5.0,
     dt: float = 0.05,
 ) -> Decomposition:
-    """Build the layered decomposition from theoretical minimum to timetable.
-
-    Parameters
-    ----------
-    derate_kmh : how far below the posted limit the run curve is drawn.
-        Industry consensus from the MLIT survey is 2-5 km/h; 3 is central.
-        JR East states the practice but publishes no figure, so this is a
-        modelled assumption carried from peer operators.
-    round_up_to_s : quantum for rounding the computed run time up to the
-        standard run time. Operators that state a unit use 5 s.
-    dwell_s : mean station dwell. NOT published for this line. Scenario input.
-    """
+    """Build the layered decomposition from theoretical minimum to timetable."""
     minimum = simulate_loop(traction, brake, segments, label="theoretical minimum",
                             speed_limit_kmh=line_speed_kmh, dt=dt)
     derated = simulate_loop(traction, brake, segments, label="de-rated run curve",
@@ -247,15 +209,7 @@ def identifiability_locus(
     dwell_range_s: tuple[float, float] = (10.0, 55.0),
     n_points: int = 46,
 ) -> dict[str, np.ndarray]:
-    """The set of (dwell, margin) pairs consistent with the published loop time.
-
-    Because loop = standard_run * (1 + margin) + n * dwell, fixing the loop time
-    leaves a one-parameter family. Every point on this line fits the published
-    data equally well. Publishing this curve is the honest alternative to
-    picking a dwell figure and quoting the margin it happens to produce.
-
-    Returns arrays 'dwell_s' and 'margin_fraction'.
-    """
+    """The set of (dwell, margin) pairs consistent with the published loop time."""
     dwell = np.linspace(dwell_range_s[0], dwell_range_s[1], n_points)
     margin = (published_loop_s - n_stations * dwell - standard_run_time_s) / standard_run_time_s
     return {"dwell_s": dwell, "margin_fraction": margin}
@@ -263,40 +217,19 @@ def identifiability_locus(
 
 def dwell_implied_by_margin(standard_run_time_s: float, published_loop_s: float,
                             n_stations: int, margin_fraction: float) -> float:
-    """Invert the problem: given a margin, what mean dwell does the loop imply?
-
-    This is the more defensible direction of inference for this project. Margin
-    practice IS documented -- MLIT records that JR East adds margin, and the
-    industry norm is a few percent. Dwell is NOT documented for this line at
-    all. So constraining the documented quantity and solving for the
-    undocumented one uses the evidence in the direction it actually runs.
-
-    Doing it the other way round -- assuming a dwell figure in order to report a
-    margin -- invites tuning the assumption until the answer looks right, which
-    is precisely the failure mode this project is meant to avoid.
-    """
+    """Invert the problem: given a margin, what mean dwell does the loop imply?"""
     return (published_loop_s - standard_run_time_s * (1.0 + margin_fraction)) / n_stations
 
 
 def dwell_implied_by_zero_margin(standard_run_time_s: float, published_loop_s: float,
                                  n_stations: int) -> float:
-    """Mean dwell that would account for the entire gap with no margin at all.
-
-    A useful bound: if the true mean dwell exceeds this, the timetable contains
-    no recovery margin whatsoever, which contradicts documented JR East practice.
-    So this is an upper bound on plausible dwell.
-    """
+    """Mean dwell that would account for the entire gap with no margin at all."""
     return (published_loop_s - standard_run_time_s) / n_stations
 
 
 @dataclass
 class SegmentComparison:
-    """Per-segment simulated vs scheduled, for the bar chart.
-
-    Carries a loud warning because public per-segment times are minute-rounded
-    and a 2-minute segment therefore has +/- 30 s of quantization -- an order of
-    magnitude larger than the effect being measured.
-    """
+    """Per-segment simulated vs scheduled, for the bar chart."""
 
     runs: list[SegmentRun]
     scheduled_s: list[float] | None = None

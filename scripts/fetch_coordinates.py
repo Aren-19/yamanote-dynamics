@@ -1,11 +1,4 @@
-"""Fetch Yamanote station coordinates from OpenStreetMap via Overpass.
-
-Queried rather than transcribed: 30 latitude/longitude pairs copied by eye
-introduces errors silently, and a wrong coordinate shows up as a kink in the map
-that looks like a rendering bug rather than a data bug.
-
-Writes data/station_coordinates.csv. Run once; the output is committed.
-"""
+"""Fetch Yamanote station coordinates from OpenStreetMap via Overpass."""
 
 from __future__ import annotations
 
@@ -60,12 +53,7 @@ def fetch(query: str) -> dict:
 
 
 def pick_best(elements: list[dict]) -> dict | None:
-    """Prefer the JR East node when several operators share a station name.
-
-    Tokyo Metro, Toei and JR nodes for the same interchange sit within ~100 m of
-    each other. For a line map any of them would look fine, but picking
-    deliberately keeps the choice documented rather than incidental.
-    """
+    """Prefer the JR East node when several operators share a station name."""
     if not elements:
         return None
     for el in elements:

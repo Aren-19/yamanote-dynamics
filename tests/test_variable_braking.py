@@ -1,10 +1,4 @@
-"""Tests for speed-dependent braking.
-
-The most valuable check here is the degenerate case: a speed-dependent profile
-whose curve happens to be flat must reproduce the closed-form constant-rate
-result. That compares a numerical integrator against an exact solution, so a
-sign error or a mis-stated ramp condition shows up immediately.
-"""
+"""Tests for speed-dependent braking."""
 
 from __future__ import annotations
 
@@ -34,7 +28,6 @@ def flat():
     return SpeedDependentBrakeProfile([(0, 4.2), (120, 4.2)], jerk=JERK)
 
 
-# ------------------------------------------------- agreement with exact case
 
 def test_flat_curve_matches_closed_form_distance(flat):
     exact = BrakeProfile(a_max=4.2 / 3.6, jerk=JERK)
@@ -50,7 +43,6 @@ def test_flat_curve_matches_closed_form_time(flat):
             exact.time_to_stop(v0), abs=0.005)
 
 
-# --------------------------------------------------------------- the curve
 
 def test_rate_interpolates_between_published_points(e7_curve):
     p = SpeedDependentBrakeProfile(e7_curve, jerk=JERK)
@@ -77,11 +69,8 @@ def test_rejects_bad_input():
         SpeedDependentBrakeProfile([(0, -2.0), (100, 2.0)], jerk=JERK)
 
 
-# --------------------------------------------------------- physical results
 
 def test_speed_dependence_lengthens_the_stop(e7_curve):
-    """Assuming the low-speed rate throughout understates the distance. This
-    is the result that justifies the class existing at all."""
     variable = SpeedDependentBrakeProfile(e7_curve, jerk=JERK)
     naive = BrakeProfile(a_max=2.69 / 3.6, jerk=JERK)
     v0 = 275 / 3.6
@@ -119,7 +108,6 @@ def test_trajectory_never_exceeds_the_rate_limit(e7_curve):
         assert abs(a) <= p.rate_ms2(v) + 1e-6
 
 
-# ----------------------------------------------------- solver compatibility
 
 def test_drops_into_the_segment_solver():
     """The interface matches BrakeProfile, so simulate_segment takes either."""
@@ -129,8 +117,7 @@ def test_drops_into_the_segment_solver():
     r = simulate_segment(traction, flat, seg.distance_m,
                          speed_limit_ms=traction.spec.max_speed_ms, dt=0.05)
     assert r.v[-1] == pytest.approx(0.0, abs=1e-9)
-    # Numerical rather than closed-form, so sub-millimetre rather than
-    # machine precision. Documented on the class.
+    # Numerical rather than closed-form, so sub-millimetre.
     assert abs(r.position_error_m) < 0.005
 
 
@@ -148,8 +135,6 @@ def test_matches_the_constant_rate_solver_run():
 
 
 def test_fleet_delegates_to_the_shared_implementation(e7_curve):
-    """fleet.py used to carry its own integrator. It now delegates, so the
-    two must return the same number."""
     e7 = load_fleet()["E7"]
     direct = SpeedDependentBrakeProfile(e7_curve, jerk=JERK,
                                         v_max_ms=275 / 3.6)
@@ -158,8 +143,6 @@ def test_fleet_delegates_to_the_shared_implementation(e7_curve):
 
 
 def test_constant_rate_classes_still_use_the_closed_form():
-    """The E235 has no curve, so it must get the exact profile, not the
-    numerical one."""
     e235 = load_fleet()["E235-0"]
     assert isinstance(e235.brake_profile(), BrakeProfile)
     e7 = load_fleet()["E7"]

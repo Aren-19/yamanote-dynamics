@@ -1,11 +1,5 @@
-/* Application chrome.
- *
- * Paper-like: white ground, thin rules, no rounded cards, no shadows. Colour
- * only where it means something — the route, a warning, a reference line.
- * Most of this removes Streamlit's default styling rather than adding to it.
- *
- * Selectors use data-testid. Class names change every minor release.
- */
+/* Paper-like: white ground, thin rules, no rounded cards, no shadows.
+   Selectors use data-testid; class names change every minor release. */
 
 :root {
   --line: #7CB342;          /* route green, darkened to read on white */
@@ -22,7 +16,7 @@
   --green: #2E7D32;
 }
 
-/* ---- strip Streamlit chrome ----------------------------------------- */
+/* Strip Streamlit chrome */
 
 #MainMenu, footer, [data-testid="stStatusWidget"] { visibility: hidden; }
 [data-testid="stHeader"] { background: transparent; height: 0; }
@@ -33,7 +27,7 @@
   max-width: 1420px;
 }
 
-/* ---- type ------------------------------------------------------------ */
+/* Type */
 
 html, body, [data-testid="stAppViewContainer"] {
   background: var(--bg);
@@ -46,7 +40,7 @@ h1 { font-size: 1.45rem !important; font-weight: 600 !important;
 h2 { font-size: 1.08rem !important; font-weight: 600 !important; }
 h3 { font-size: 0.96rem !important; font-weight: 600 !important; }
 
-/* Section labels. Small and grey, but not letterspaced small-caps. */
+/* Section labels. */
 h4, h5 {
   font-size: 0.82rem !important;
   font-weight: 600 !important;
@@ -59,7 +53,7 @@ h4, h5 {
   font-variant-numeric: tabular-nums;
 }
 
-/* ---- sidebar --------------------------------------------------------- */
+/* Sidebar */
 
 [data-testid="stSidebar"] {
   background: var(--panel);
@@ -76,12 +70,8 @@ h4, h5 {
   border: 1px solid var(--edge);
 }
 
-/* ---- dropdowns: selectable, not typeable ----------------------------- */
-/* Streamlit selectboxes accept free text, which invites typing a value that
-   is not in the list. These lists are short and fixed, so clicks only.
-   pointer-events:none lets the click reach the wrapper, which opens the menu.
-   Streamlit 1.61 removed the data-baseweb attributes, so only data-testid
-   selectors match anything. */
+/* Dropdowns: click only, no free text. pointer-events:none lets the click
+   reach the wrapper, which opens the menu. */
 
 [data-testid="stSelectbox"] input,
 [data-testid="stMultiSelect"] input {
@@ -93,7 +83,7 @@ h4, h5 {
 
 [data-testid="stSelectbox"] > div { cursor: pointer; }
 
-/* ---- tabs ------------------------------------------------------------- */
+/* Tabs */
 
 [data-testid="stTabs"] [role="tablist"] {
   gap: 0;
@@ -120,7 +110,7 @@ h4, h5 {
   border-bottom: 2px solid var(--green);
 }
 
-/* ---- train picker ------------------------------------------------------ */
+/* Train picker */
 
 .train-card {
   border: 1px solid var(--edge);
@@ -132,8 +122,7 @@ h4, h5 {
 .train-card.on { border-left-color: var(--green); }
 .train-card svg { width: 100%; height: auto; display: block; }
 
-/* Streamlit's primary button is a filled block. The selected class is already
-   marked by the rule on its card, so both states stay quiet. */
+/* The card's rule marks the selection, so both button states stay quiet. */
 [data-testid="stSidebar"] [data-testid="stBaseButton-primary"],
 [data-testid="stSidebar"] [data-testid="stBaseButton-secondary"] {
   border-radius: 0;
@@ -150,9 +139,7 @@ h4, h5 {
   font-weight: 600;
 }
 
-/* ---- metrics ----------------------------------------------------------- */
-/* Rule above, nothing else. Boxes around every number turn a page of results
-   into a dashboard. */
+/* Metrics: a rule above, nothing else. */
 
 [data-testid="stMetric"] {
   background: transparent;
@@ -174,7 +161,7 @@ h4, h5 {
 
 [data-testid="stMetricDelta"] { font-size: 0.72rem !important; }
 
-/* ---- panels, tables, alerts -------------------------------------------- */
+/* Panels, tables, alerts */
 
 [data-testid="stExpander"] details {
   background: var(--bg);
@@ -200,12 +187,11 @@ h4, h5 {
 
 hr { border-color: var(--edge) !important; }
 
-/* Keep the Plotly toolbar visible rather than hover-only, so "reset zoom" is
-   always findable. */
+/* Toolbar always visible, not hover-only. */
 .modebar { opacity: 0.7 !important; }
 .modebar:hover { opacity: 1 !important; }
 
-/* ---- departure board ---------------------------------------------------- */
+/* Departure board */
 
 .board { background: var(--bg); border: 1px solid var(--edge); }
 
@@ -240,7 +226,7 @@ hr { border-color: var(--edge) !important; }
 .board-dest { font-size: 0.92rem; }
 .board-sub  { font-size: 0.73rem; color: var(--muted); }
 
-/* Crowding. Coloured text on a rule, not a rounded badge. */
+/* Crowding: coloured text on a rule, not a badge. */
 .board-load {
   font-size: 0.76rem;
   font-weight: 600;

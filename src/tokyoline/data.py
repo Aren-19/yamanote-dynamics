@@ -1,11 +1,4 @@
-"""Loading the data layer and assembling a default model.
-
-Distances are JR East's published operating kilometrage (営業キロ), not
-great-circle distance between stations. The Yamanote curves, so straight-line
-distance understates track distance, and scaling it to hit 34.5 km spreads the
-residual unevenly across segments -- straight onto the bias this project exists
-to measure. Published kilometrage removes the error instead of correcting it.
-"""
+"""Loading the data layer and assembling a default model."""
 
 from __future__ import annotations
 
@@ -36,12 +29,7 @@ class Segment:
     distance_m: float
 
     grade_permille: float = 0.0
-    """Average gradient, positive uphill in the outer-loop direction.
-
-    Zero unless segments are loaded with `gradients=True`. See
-    :func:`load_gradients` for why the default is zero and why the derived
-    profile is a bounding study rather than an input to the headline results.
-    """
+    """Average gradient, positive uphill in the outer-loop direction."""
 
     def __str__(self) -> str:
         return f"{self.from_station} -> {self.to_station} ({self.distance_m:.0f} m)"
@@ -67,17 +55,7 @@ def load_stations(path: Path | str | None = None) -> pd.DataFrame:
 
 
 def load_gradients(path: Path | str | None = None) -> dict[tuple[str, str], float]:
-    """Average per-segment gradient in per-mille, derived from terrain elevation.
-
-    Deliberately not used by any headline result. The values come from ground
-    elevation at each station, and railways are graded so that track does not
-    follow the ground -- viaducts and cuttings hold the rails level while the
-    terrain moves. Ground elevation therefore overstates track gradient, and
-    feeding it to the physics would add an error while looking like it removed one.
-
-    Its legitimate use is as a bound: running with gradients this large caps how
-    much the flat-track assumption can be costing. See scripts/gradient.py.
-    """
+    """Average per-segment gradient in per-mille, derived from terrain elevation."""
     path = Path(path) if path else DATA_DIR / "gradients.csv"
     df = pd.read_csv(path, comment="#")
     return {
@@ -88,13 +66,7 @@ def load_gradients(path: Path | str | None = None) -> dict[tuple[str, str], floa
 
 def load_segments(path: Path | str | None = None, *,
                   gradients: bool = False) -> list[Segment]:
-    """Build the 30 interstation segments in outer-loop order.
-
-    Segment i runs from station i to station i+1, and the final segment closes
-    the loop back to the origin. There are exactly as many segments as stations
-    because it is a loop, which is worth stating because it is the one place an
-    off-by-one would silently drop 0.9 km.
-    """
+    """Build the 30 interstation segments in outer-loop order."""
     df = load_stations(path)
     names = df["name_en"].tolist()
     n = len(names)
@@ -119,22 +91,13 @@ def load_segments(path: Path | str | None = None, *,
 
 
 def load_ridership(path: Path | str | None = None) -> pd.DataFrame:
-    """JR East published daily BOARDINGS per station, FY2024.
-
-    Boardings only. Not boardings plus alightings, and not segment loading.
-    Turning this into train occupancy would require an origin-destination matrix
-    that is not public. See the header of the CSV.
-    """
+    """JR East published daily BOARDINGS per station, FY2024."""
     path = Path(path) if path else DATA_DIR / "ridership.csv"
     return pd.read_csv(path, comment="#")
 
 
 def load_congestion(path: Path | str | None = None) -> dict:
-    """MLIT congestion rates for the Yamanote's critical sections.
-
-    Covers one section per direction at peak hour. That is the whole of the
-    public segment-level loading data for this line.
-    """
+    """MLIT congestion rates for the Yamanote's critical sections."""
     path = Path(path) if path else DATA_DIR / "congestion.json"
     with open(path, encoding="utf-8") as fh:
         return json.load(fh)
@@ -152,12 +115,7 @@ def build_model(
     jerk_limit: float = DEFAULT_JERK_LIMIT,
     power_factor: float = 1.0,
 ) -> tuple[TractionModel, BrakeProfile]:
-    """Assemble the default traction and braking models.
-
-    `load_factor` of 1.0 is nominal full capacity. The Yamanote routinely
-    exceeds this at peak -- published congestion rates are above 100 percent --
-    so this is a mid-range operating assumption, not a worst case.
-    """
+    """Assemble the default traction and braking models."""
     spec = spec or load_spec()
 
     davis = DavisCoefficients.estimate_for_emu(
