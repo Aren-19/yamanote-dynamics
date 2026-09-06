@@ -182,6 +182,14 @@ what separates them is the published line speed, not the loop time. Eleven of
 30 segments never reach 90 km/h in any case, the shortest peaking at 67 km/h,
 so a restriction there is free.
 
+**Passenger load.** Every headline figure assumes 100% of published capacity,
+while the published loop time it is compared against is the mean of all
+services, most of them far lighter. Sweeping empty to the MLIT-measured 125%
+peak moves the standard run time by 105 s and implied dwell by 3.7 s, from
+48.0 s at the assumed load to 50.2 s empty. The bias therefore runs *against*
+the result: a realistic daily mean load would push implied dwell up, toward the
+51.9 s zero-margin bound, not down.
+
 ## Data sources
 
 | Quantity | Source |

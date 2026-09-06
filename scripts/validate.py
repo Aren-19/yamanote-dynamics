@@ -131,6 +131,48 @@ for rate_kmh_s in (4.2, 3.5, 3.0, 2.5):
 
 print()
 print("=" * 78)
+print("PASSENGER LOAD SENSITIVITY  --  who is on board is also an assumption")
+print("=" * 78)
+print("  Load factor is passengers as a fraction of published capacity, and every")
+print("  figure above uses 1.0. Heavier trains accelerate more slowly, so the")
+print("  minimum run time is a function of an assumption about who is on board.")
+print()
+print("  The comparison is against the mean of all services across the day. Most")
+print("  of those are not full: MLIT measures 125 percent on the busiest section")
+print("  in the busiest hour, which bounds the peak, not the mean. A daily mean")
+print("  load of 1.0 is therefore an OVERSTATEMENT, and it biases the model slow,")
+print("  which biases implied dwell low. The bias runs against the result.")
+print()
+print(f"  {'load':>6} {'mass':>8} {'standard run':>14} {'residual':>11} "
+      f"{'implied dwell @ 5%':>20}")
+print("  " + "-" * 64)
+for load in (0.0, 0.25, 0.5, 1.0, 1.25, 1.6):
+    tr, br = build_model(load_factor=load)
+    d = decompose(tr, br, segments, dwell_s=DWELL["central"],
+                  published_loop_s=PUBLISHED_LOOP_S, line_speed_kmh=LINE_SPEED_KMH)
+    dwell_5 = dwell_implied_by_margin(d.standard_run_time_s, PUBLISHED_LOOP_S,
+                                      len(segments), 0.05)
+    note = "  <- MLIT peak-hour measurement" if load == 1.25 else ""
+    print(f"  {load:6.2f} {tr.spec.mass_kg(load) / 1000:6.0f} t "
+          f"{d.standard_run_time_s:12.0f} s {d.residual_margin_s:9.0f} s "
+          f"{dwell_5:17.1f} s{note}")
+
+print()
+print("  Empty to peak-hour full moves the standard run time by 105 s, 18 percent")
+print("  of the residual. Rounding to the 5 s quantum absorbs much of it, which")
+print("  is why the raw run-time spread of 145 s does not carry through. It is a")
+print("  smaller lever than the brake rate, which spans 190 s over its plausible")
+print("  range.")
+print()
+print("  Implied dwell moves by 3.7 s across the whole load range, from 48.0 s at")
+print("  the assumed 1.0 to 50.2 s empty. Since the true daily mean load is below")
+print("  1.0, the headline understates implied dwell slightly, pushing it toward")
+print("  the top of the reported 39 to 50 s range and closer to the 51.9 s")
+print("  zero-margin bound. The direction of the bias is known even though its")
+print("  size is not, because mean load is not published.")
+
+print()
+print("=" * 78)
 print("INVERTED INFERENCE  --  constrain the DOCUMENTED quantity, solve for the")
 print("                        UNDOCUMENTED one")
 print("=" * 78)

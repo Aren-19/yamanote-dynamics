@@ -245,6 +245,30 @@ def test_a_severe_75_kmh_cap_accounts_for_a_seventh_of_the_residual(runs):
     assert 0.10 < cost / 598.0 < 0.20
 
 
+def test_load_moves_implied_dwell_by_under_four_seconds():
+    """README: passenger load moves implied dwell by 3.7 s across the whole
+    plausible range, and lighter trains imply MORE dwell, not less.
+
+    The direction matters more than the size. Every headline figure assumes
+    100 percent of published capacity while the published loop time it is
+    compared against is the mean of all services, most of them far lighter. So
+    the reported dwell is, if anything, understated -- the bias runs against
+    the result rather than toward it."""
+    segments = load_segments()
+    implied = {}
+    for load in (0.0, 1.0, 1.6):
+        traction, brake = build_model(load_factor=load)
+        d = decompose(traction, brake, segments, dwell_s=DWELL_SCENARIO_S,
+                      published_loop_s=PUBLISHED_CIRCUIT_S, line_speed_kmh=90.0)
+        implied[load] = dwell_implied_by_margin(
+            d.standard_run_time_s, PUBLISHED_CIRCUIT_S, len(segments), 0.05)
+
+    assert implied[0.0] > implied[1.0] > implied[1.6]
+    assert implied[0.0] - implied[1.6] < 4.5
+    for value in implied.values():
+        assert 45.0 < value < 51.9
+
+
 def test_e7_stops_in_5670_m_from_275_kmh():
     """README: 'Integrating the real curve gives a 5,670 m stop'."""
     e7 = load_fleet()["E7"]
